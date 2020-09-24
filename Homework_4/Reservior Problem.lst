@@ -1,0 +1,2605 @@
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/24/20 12:45:52 Page 1
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+C o m p i l a t i o n
+
+
+       
+      CEE 6410 - Water Resources Systems Analysis
+      Reservior Problem
+       
+       
+      Moazzam Rind
+      moazzamalirind@gmail.com
+      September 18, 2015
+  11   
+  12  Sets
+  13   
+  14  Loc                     Location /Reservior "Reservior",Spill "Spill",Turb
+      ine "Hydropower",Flow_at_A "Flow at Point A" ,Irrigation "Irrigation"/
+  15  T                       Time in months /M1*M6/
+  16  ;
+  17   
+  18  Parameters
+  19  *Given data
+  20  Inflow(T)                Inflow volume (Inflow units) during time T /M1 2,
+      M2 2,M3 3,M4 4,M5 3,M6 2/
+  21  hb(T)                    Hydropower Benefits ($ per unit)/M1 1.6,M2 1.7,M3
+       1.8,M4 1.9,M5 2,M6 2/
+  22  ib(T)                    Irrigation Benefits ($ per unit)/M1 1,M2 1.2,M3 1
+      .9,M4 2,M5 2.2,M6 2.2/
+  23   
+  24  ;
+  25   
+  26  Positive variables
+  27  X(Loc,T)                Water volume at location Loc at time T  (volume un
+      its);
+  28  *                       For reservior loaction it's storage volume and at 
+      other locations it's flow (volume/time)
+  29   
+  30  Variable
+  31  Max_Z                   Objective Function value
+  32   
+  33   
+  34  Scalars
+  35  Initial_storage          Water avialable in reservior at start (volume)/5/
+  36  capacity_Reservior       Storage capacity of the Reservior (volume) /9/
+  37  ReqWater_PointA          Minimum water required at point A (volume per tim
+      e) /1/
+  38  MaxTurbine_capacity      Maximum capacity of the turbine (volume per time)
+      /4/
+  39  ;
+  40   
+  41  Equations
+  42   
+  43  Max_benefit                 Objective function i.e. to maximize the benefi
+      t ($)
+  44  Reservior_capacity(T)       Reservior capacity constraint (volume)
+  45  PointA_Constraint(T)        Minimum flow constraint at point A (volume per
+       time)
+  46  EndStorage_Constraint       Ending storage in reservior constraint (volume
+      )
+  47  Turbine_capacity(T)         Maximum volume turbine can pass per time T (Vo
+      lume per time)
+  48  Massbalance_pointB(T)       Max balance at point B at any time T
+  49  Reservior_Massbalance(T)    Reservior Mass balance (Volume)
+  50  Initial_Reservior(T)        Reservior Mass balance at first timestep (Volu
+      me)
+  51  ;
+  52   
+  53  *Objective function (i.e Maximize Benefits) and all constraints.
+  54  Max_benefit..                    Max_Z =e= sum (T,hb(T)* X("Turbine",T)+ i
+      b(T)* X("Irrigation",T));
+  55  Reservior_capacity(T)..          X("Reservior",T)=l= capacity_Reservior;
+  56  PointA_Constraint(T)..           X("Flow_at_A",T)=g= ReqWater_PointA ;
+  57  EndStorage_Constraint..          X("Reservior","M6") =g= Initial_storage;
+  58  Turbine_capacity(T)..            X("Turbine",T)=l= MaxTurbine_capacity;
+  59  Massbalance_pointB(T)..          X("Turbine",T)+  X("Spill",T) =e=  X("Irr
+      igation",T)+X("Flow_at_A",T);
+  60  Reservior_Massbalance(T)$(ord(T) gt 1)..     X("Reservior",T) =e= X("Reser
+      vior",T-1)+Inflow(T)-X("Spill",T)- X("Turbine",T);
+  61  Initial_Reservior(T)$(ord(T) eq 1)..         X("Reservior",T) =e= Initial_
+      storage + Inflow(T) -X("Spill",T)- X("Turbine",T);
+  62   
+  63   
+  64  *  Primary model
+  65  MODEL Benefit /Max_benefit,Reservior_capacity,PointA_Constraint,EndStorage
+      _Constraint,Turbine_capacity,Massbalance_pointB,Reservior_Massbalance,Init
+      ial_Reservior/;
+  66   
+  67  **************************************************************************
+      ******
+  68  * Model with increased instream flow requirement
+  69   
+  70  parameter
+  71   
+  72  AddWater_PointA          Minimum water required at point A (volume per tim
+      e)/2/;
+  73  * Increased instream flow requiment from one to two
+  74   
+  75  Equations
+  76  NewPointA_Constraint(T)        Minimum flow constraint at point A (volume 
+      per time);
+  77  NewPointA_Constraint(T)..           X("Flow_at_A",T)=g= AddWater_PointA ;
+  78   
+  79  * Define model having increased instream flow requirement
+  80  MODEL PointA /Max_benefit,Reservior_capacity,NewPointA_Constraint,EndStora
+      ge_Constraint,Turbine_capacity,Massbalance_pointB,Reservior_Massbalance,In
+      itial_Reservior/;
+  81   
+  82  **************************************************************************
+      ******
+  83  *Model with one more unit of water for months 1, 2, and 3.
+  84  parameter
+  85   
+  86  New_Inflow(T)                Inflow volume (Inflow units) during time T /M
+      1 3,M2 3,M3 4,M4 4,M5 3,M6 2/;
+  87  * one  additional unit inflow during first three months.
+  88   
+  89  Equations
+  90  NewReservior_Massbalance(T)        Reservior Mass balance (Volume)
+  91  NewInitial_Reservior(T)            Reservior Mass balance at first timeste
+      p (Volume);
+  92   
+  93  NewReservior_Massbalance(T)$(ord(T) gt 1)..     X("Reservior",T) =e= X("Re
+      servior",T-1)+New_Inflow(T)-X("Spill",T)- X("Turbine",T);
+  94  NewInitial_Reservior(T)$(ord(T) eq 1)..         X("Reservior",T) =e= Initi
+      al_storage + New_Inflow(T) -X("Spill",T)- X("Turbine",T);;
+  95   
+  96  * Define model for increased inflow condition
+  97  MODEL AddedInflows /Max_benefit,Reservior_capacity,PointA_Constraint,EndSt
+      orage_Constraint,Turbine_capacity,Massbalance_pointB,NewReservior_Massbala
+      nce,NewInitial_Reservior/;
+  98   
+  99  **************************************************************************
+      *****
+ 100   
+ 101   
+ 102  *$ontext
+ 103  **************************************************************************
+      ******
+ 104  *Model to find that at which instream flow requirement the solution change
+       its basis
+ 105   
+ 106  Set
+ 107  RUN                             Runs /r1*r5/;
+ 108  *To make model run 5 times with different  inflow requirement values
+ 109   
+ 110  parameters
+ 111  Water_PointA(RUN)         Minimum water required at point A (volume per ti
+      me)/r1 1,r2 2,r3 3,r4 4,r5 5/
+ 112  * Increased instream flow requiment
+ 113  Obj_Value(RUN)                  Save objective function value under differ
+      ent runs
+ 114  Turbine_variable(RUN,T)         save decision variable (flow through turbi
+      ne) under different runs
+ 115  Irrigation_variable(RUN,T)      save decision variable (Flow to irrigation
+      ) under different runs
+ 116  FlowRate_A                       Flow rate at point A (volume per time);
+ 117   
+ 118  Equation
+ 119  FlowA(T)                         flow rate at point A (volume per time);
+ 120   
+ 121  FlowA(T)..                       X("Flow_at_A",T)=g= FlowRate_A;
+ 122   
+ 123   
+ 124  * Define model having increased instream flow requirement
+ 125  MODEL ChangeBasis /Max_benefit,Reservior_capacity,FlowA,EndStorage_Constra
+      int,Turbine_capacity,Massbalance_pointB,Reservior_Massbalance,Initial_Rese
+      rvior/;
+ 126   
+ 127  loop(RUN,
+ 128     FlowRate_A= Water_PointA(RUN);
+ 129   
+ 130  *    Initialize decision variable values to zero
+ 131      X.L("Turbine",T) = 0;
+ 132      X.L("Irrigation",T)=0;
+ 133   
+ 134  SOLVE ChangeBasis USING LP MAXIMIZING Max_Z;
+ 135      Obj_Value(RUN)= Max_Z.L;
+ 136      Turbine_variable(RUN,T)= X.L("Turbine",T);
+ 137      Irrigation_variable(RUN,T)= X.L("Irrigation",T);
+ 138  );
+ 139   
+ 140   
+ 141  **************************************************************************
+      *****
+ 142  *offtext
+ 143   
+ 144   
+ 145  *Benefit.OptFile=1;
+ 146  *Option objrng all;
+ 147   
+ 148  *option rhsrng all;
+ 149   
+ 150   
+ 151   
+ 152   
+ 153  *Solve statements for defined models
+ 154  SOLVE Benefit USING LP MAXIMIZING Max_Z;
+ 155   
+ 156  SOLVE PointA USING LP MAXIMIZING Max_Z;
+ 157  SOLVE AddedInflows USING LP MAXIMIZING Max_Z;
+ 158   
+ 159   
+ 160  * Dump all input data and results to a GAMS gdx file
+ 161  Execute_Unload "Reservior.gdx";
+ 162  * Dump the gdx file to an Excel workbook
+ 163  Execute "gdx2xls Reservior.gdx"
+ 164   
+ 165   
+ 166   
+ 167   
+ 168   
+ 169   
+ 170   
+ 171   
+ 172   
+ 173   
+ 174   
+ 175   
+ 176   
+ 177   
+ 178   
+ 179   
+
+
+COMPILATION TIME     =        0.000 SECONDS      3 MB  32.2.0 rc62c018 WEX-WEI
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/24/20 12:45:52 Page 2
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Equation Listing    SOLVE ChangeBasis Using LP From line 134
+
+
+---- Max_benefit  =E=  Objective function i.e. to maximize the benefit ($)
+
+Max_benefit..  - 1.6*X(Turbine,M1) - 1.7*X(Turbine,M2) - 1.8*X(Turbine,M3)
+     
+      - 1.9*X(Turbine,M4) - 2*X(Turbine,M5) - 2*X(Turbine,M6) - X(Irrigation,M1)
+     
+      - 1.2*X(Irrigation,M2) - 1.9*X(Irrigation,M3) - 2*X(Irrigation,M4)
+     
+      - 2.2*X(Irrigation,M5) - 2.2*X(Irrigation,M6) + Max_Z =E= 0 ; (LHS = 0)
+     
+
+---- Reservior_capacity  =L=  Reservior capacity constraint (volume)
+
+Reservior_capacity(M1)..  X(Reservior,M1) =L= 9 ; (LHS = 0)
+     
+Reservior_capacity(M2)..  X(Reservior,M2) =L= 9 ; (LHS = 0)
+     
+Reservior_capacity(M3)..  X(Reservior,M3) =L= 9 ; (LHS = 0)
+     
+REMAINING 3 ENTRIES SKIPPED
+
+
+---- FlowA  =G=  flow rate at point A (volume per time)
+
+FlowA(M1)..  X(Flow_at_A,M1) =G= 1 ; (LHS = 0, INFES = 1 ****)
+     
+FlowA(M2)..  X(Flow_at_A,M2) =G= 1 ; (LHS = 0, INFES = 1 ****)
+     
+FlowA(M3)..  X(Flow_at_A,M3) =G= 1 ; (LHS = 0, INFES = 1 ****)
+     
+REMAINING 3 ENTRIES SKIPPED
+
+
+---- EndStorage_Constraint  =G=  Ending storage in reservior constraint (volume)
+
+EndStorage_Constraint..  X(Reservior,M6) =G= 5 ; (LHS = 0, INFES = 5 ****)
+     
+
+---- Turbine_capacity  =L=  Maximum volume turbine can pass per time T (Volume p
+                            er time)
+
+Turbine_capacity(M1)..  X(Turbine,M1) =L= 4 ; (LHS = 0)
+     
+Turbine_capacity(M2)..  X(Turbine,M2) =L= 4 ; (LHS = 0)
+     
+Turbine_capacity(M3)..  X(Turbine,M3) =L= 4 ; (LHS = 0)
+     
+REMAINING 3 ENTRIES SKIPPED
+
+
+---- Massbalance_pointB  =E=  Max balance at point B at any time T
+
+Massbalance_pointB(M1)..  X(Spill,M1) + X(Turbine,M1) - X(Flow_at_A,M1)
+     
+      - X(Irrigation,M1) =E= 0 ; (LHS = 0)
+     
+Massbalance_pointB(M2)..  X(Spill,M2) + X(Turbine,M2) - X(Flow_at_A,M2)
+     
+      - X(Irrigation,M2) =E= 0 ; (LHS = 0)
+     
+Massbalance_pointB(M3)..  X(Spill,M3) + X(Turbine,M3) - X(Flow_at_A,M3)
+     
+      - X(Irrigation,M3) =E= 0 ; (LHS = 0)
+     
+REMAINING 3 ENTRIES SKIPPED
+
+
+---- Reservior_Massbalance  =E=  Reservior Mass balance (Volume)
+
+Reservior_Massbalance(M2)..  - X(Reservior,M1) + X(Reservior,M2) + X(Spill,M2)
+     
+      + X(Turbine,M2) =E= 2 ; (LHS = 0, INFES = 2 ****)
+     
+Reservior_Massbalance(M3)..  - X(Reservior,M2) + X(Reservior,M3) + X(Spill,M3)
+     
+      + X(Turbine,M3) =E= 3 ; (LHS = 0, INFES = 3 ****)
+     
+Reservior_Massbalance(M4)..  - X(Reservior,M3) + X(Reservior,M4) + X(Spill,M4)
+     
+      + X(Turbine,M4) =E= 4 ; (LHS = 0, INFES = 4 ****)
+     
+REMAINING 2 ENTRIES SKIPPED
+
+
+---- Initial_Reservior  =E=  Reservior Mass balance at first timestep (Volume)
+
+Initial_Reservior(M1)..  X(Reservior,M1) + X(Spill,M1) + X(Turbine,M1) =E= 7 ;
+     
+      (LHS = 0, INFES = 7 ****)
+     
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/24/20 12:45:52 Page 3
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Column Listing      SOLVE ChangeBasis Using LP From line 134
+
+
+---- X  Water volume at location Loc at time T  (volume units)
+
+X(Reservior,M1)
+                (.LO, .L, .UP, .M = 0, 0, +INF, 0)
+        1       Reservior_capacity(M1)
+       -1       Reservior_Massbalance(M2)
+        1       Initial_Reservior(M1)
+
+X(Reservior,M2)
+                (.LO, .L, .UP, .M = 0, 0, +INF, 0)
+        1       Reservior_capacity(M2)
+        1       Reservior_Massbalance(M2)
+       -1       Reservior_Massbalance(M3)
+
+X(Reservior,M3)
+                (.LO, .L, .UP, .M = 0, 0, +INF, 0)
+        1       Reservior_capacity(M3)
+        1       Reservior_Massbalance(M3)
+       -1       Reservior_Massbalance(M4)
+
+REMAINING 27 ENTRIES SKIPPED
+
+---- Max_Z  Objective Function value
+
+Max_Z
+                (.LO, .L, .UP, .M = -INF, 0, +INF, 0)
+        1       Max_benefit
+
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/24/20 12:45:52 Page 4
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Model Statistics    SOLVE ChangeBasis Using LP From line 134
+
+
+LOOPS                                  RUN   r1
+
+
+MODEL STATISTICS
+
+BLOCKS OF EQUATIONS           8     SINGLE EQUATIONS           32
+BLOCKS OF VARIABLES           2     SINGLE VARIABLES           31
+NON ZERO ELEMENTS            79
+
+
+GENERATION TIME      =        0.016 SECONDS      4 MB  32.2.0 rc62c018 WEX-WEI
+               L O O P S                RUN r1
+
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/24/20 12:45:52 Page 5
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE ChangeBasis Using LP From line 134
+
+
+               S O L V E      S U M M A R Y
+
+     MODEL   ChangeBasis         OBJECTIVE  Max_Z
+     TYPE    LP                  DIRECTION  MAXIMIZE
+     SOLVER  CPLEX               FROM LINE  134
+
+**** SOLVER STATUS     1 Normal Completion         
+**** MODEL STATUS      1 Optimal                   
+**** OBJECTIVE VALUE               51.6000
+
+ RESOURCE USAGE, LIMIT          0.000 10000000000.000
+ ITERATION COUNT, LIMIT         9    2147483647
+
+IBM ILOG CPLEX   32.2.0 rc62c018 Released Aug 26, 2020 WEI x86 64bit/MS Window
+--- GAMS/Cplex Link licensed for continuous and discrete problems.
+Cplex 12.10.0.0
+
+Space for names approximately 0.00 Mb
+Use option 'names no' to turn use of names off
+LP status(1): optimal
+Cplex Time: 0.00sec (det. 0.05 ticks)
+Optimal solution found.
+Objective :          51.600000
+
+
+                       LOWER     LEVEL     UPPER    MARGINAL
+
+---- EQU Max_benef~      .         .         .        1.000      
+
+  Max_benefit  Objective function i.e. to maximize the benefit ($)
+
+---- EQU Reservior_capacity  Reservior capacity constraint (volume)
+
+      LOWER     LEVEL     UPPER    MARGINAL
+
+M1     -INF      6.000     9.000      .         
+M2     -INF      7.000     9.000      .         
+M3     -INF      8.000     9.000      .         
+M4     -INF      8.000     9.000      .         
+M5     -INF      7.000     9.000      .         
+M6     -INF      5.000     9.000      .         
+
+---- EQU FlowA  flow rate at point A (volume per time)
+
+      LOWER     LEVEL     UPPER    MARGINAL
+
+M1     1.000     1.000     +INF     -2.100      
+M2     1.000     1.000     +INF     -2.000      
+M3     1.000     1.000     +INF     -1.900      
+M4     1.000     1.000     +INF     -2.000      
+M5     1.000     1.000     +INF     -2.200      
+M6     1.000     1.000     +INF     -2.200      
+
+                       LOWER     LEVEL     UPPER    MARGINAL
+
+---- EQU EndStorag~     5.000     5.000     +INF     -3.700      
+
+  EndStorage_Constraint  Ending storage in reservior constraint (volume)
+
+---- EQU Turbine_capacity  Maximum volume turbine can pass per time T (Volume pe
+                           r time)
+
+      LOWER     LEVEL     UPPER    MARGINAL
+
+M1     -INF      1.000     4.000      .         
+M2     -INF      1.000     4.000      .         
+M3     -INF      2.000     4.000      .         
+M4     -INF      4.000     4.000     0.200      
+M5     -INF      4.000     4.000     0.500      
+M6     -INF      4.000     4.000     0.500      
+
+---- EQU Massbalance_pointB  Max balance at point B at any time T
+
+      LOWER     LEVEL     UPPER    MARGINAL
+
+M1      .         .         .       -2.100      
+M2      .         .         .       -2.000      
+M3      .         .         .       -1.900      
+M4      .         .         .       -2.000      
+M5      .         .         .       -2.200      
+M6      .         .         .       -2.200      
+
+---- EQU Reservior_Massbalance  Reservior Mass balance (Volume)
+
+      LOWER     LEVEL     UPPER    MARGINAL
+
+M2     2.000     2.000     2.000     3.700      
+M3     3.000     3.000     3.000     3.700      
+M4     4.000     4.000     4.000     3.700      
+M5     3.000     3.000     3.000     3.700      
+M6     2.000     2.000     2.000     3.700      
+
+---- EQU Initial_Reservior  Reservior Mass balance at first timestep (Volume)
+
+      LOWER     LEVEL     UPPER    MARGINAL
+
+M1     7.000     7.000     7.000     3.700      
+
+---- VAR X  Water volume at location Loc at time T  (volume units)
+
+                 LOWER     LEVEL     UPPER    MARGINAL
+
+Reservior .M1      .        6.000     +INF       .         
+Reservior .M2      .        7.000     +INF       .         
+Reservior .M3      .        8.000     +INF       .         
+Reservior .M4      .        8.000     +INF       .         
+Reservior .M5      .        7.000     +INF       .         
+Reservior .M6      .        5.000     +INF       .         
+Spill     .M1      .         .        +INF     -1.600      
+Spill     .M2      .         .        +INF     -1.700      
+Spill     .M3      .         .        +INF     -1.800      
+Spill     .M4      .         .        +INF     -1.700      
+Spill     .M5      .         .        +INF     -1.500      
+Spill     .M6      .         .        +INF     -1.500      
+Turbine   .M1      .        1.000     +INF       .         
+Turbine   .M2      .        1.000     +INF       .         
+Turbine   .M3      .        2.000     +INF       .         
+Turbine   .M4      .        4.000     +INF       .         
+Turbine   .M5      .        4.000     +INF       .         
+Turbine   .M6      .        4.000     +INF       .         
+Flow_at_A .M1      .        1.000     +INF       .         
+Flow_at_A .M2      .        1.000     +INF       .         
+Flow_at_A .M3      .        1.000     +INF       .         
+Flow_at_A .M4      .        1.000     +INF       .         
+Flow_at_A .M5      .        1.000     +INF       .         
+Flow_at_A .M6      .        1.000     +INF       .         
+Irrigation.M1      .         .        +INF     -1.100      
+Irrigation.M2      .         .        +INF     -0.800      
+Irrigation.M3      .        1.000     +INF       .         
+Irrigation.M4      .        3.000     +INF       .         
+Irrigation.M5      .        3.000     +INF       .         
+Irrigation.M6      .        3.000     +INF       .         
+
+                       LOWER     LEVEL     UPPER    MARGINAL
+
+---- VAR Max_Z          -INF     51.600     +INF       .         
+
+  Max_Z  Objective Function value
+
+
+**** REPORT SUMMARY :        0     NONOPT
+                             0 INFEASIBLE
+                             0  UNBOUNDED
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/24/20 12:45:52 Page 6
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Equation Listing    SOLVE ChangeBasis Using LP From line 134
+
+
+---- Max_benefit  =E=  Objective function i.e. to maximize the benefit ($)
+
+Max_benefit..  - 1.6*X(Turbine,M1) - 1.7*X(Turbine,M2) - 1.8*X(Turbine,M3)
+     
+      - 1.9*X(Turbine,M4) - 2*X(Turbine,M5) - 2*X(Turbine,M6) - X(Irrigation,M1)
+     
+      - 1.2*X(Irrigation,M2) - 1.9*X(Irrigation,M3) - 2*X(Irrigation,M4)
+     
+      - 2.2*X(Irrigation,M5) - 2.2*X(Irrigation,M6) + Max_Z =E= 0 ;
+     
+      (LHS = 51.6, INFES = 51.6 ****)
+     
+
+---- Reservior_capacity  =L=  Reservior capacity constraint (volume)
+
+Reservior_capacity(M1)..  X(Reservior,M1) =L= 9 ; (LHS = 6)
+     
+Reservior_capacity(M2)..  X(Reservior,M2) =L= 9 ; (LHS = 7)
+     
+Reservior_capacity(M3)..  X(Reservior,M3) =L= 9 ; (LHS = 8)
+     
+REMAINING 3 ENTRIES SKIPPED
+
+
+---- FlowA  =G=  flow rate at point A (volume per time)
+
+FlowA(M1)..  X(Flow_at_A,M1) =G= 2 ; (LHS = 1, INFES = 1 ****)
+     
+FlowA(M2)..  X(Flow_at_A,M2) =G= 2 ; (LHS = 1, INFES = 1 ****)
+     
+FlowA(M3)..  X(Flow_at_A,M3) =G= 2 ; (LHS = 1, INFES = 1 ****)
+     
+REMAINING 3 ENTRIES SKIPPED
+
+
+---- EndStorage_Constraint  =G=  Ending storage in reservior constraint (volume)
+
+EndStorage_Constraint..  X(Reservior,M6) =G= 5 ; (LHS = 5)
+     
+
+---- Turbine_capacity  =L=  Maximum volume turbine can pass per time T (Volume p
+                            er time)
+
+Turbine_capacity(M1)..  X(Turbine,M1) =L= 4 ; (LHS = 0)
+     
+Turbine_capacity(M2)..  X(Turbine,M2) =L= 4 ; (LHS = 0)
+     
+Turbine_capacity(M3)..  X(Turbine,M3) =L= 4 ; (LHS = 0)
+     
+REMAINING 3 ENTRIES SKIPPED
+
+
+---- Massbalance_pointB  =E=  Max balance at point B at any time T
+
+Massbalance_pointB(M1)..  X(Spill,M1) + X(Turbine,M1) - X(Flow_at_A,M1)
+     
+      - X(Irrigation,M1) =E= 0 ; (LHS = -1, INFES = 1 ****)
+     
+Massbalance_pointB(M2)..  X(Spill,M2) + X(Turbine,M2) - X(Flow_at_A,M2)
+     
+      - X(Irrigation,M2) =E= 0 ; (LHS = -1, INFES = 1 ****)
+     
+Massbalance_pointB(M3)..  X(Spill,M3) + X(Turbine,M3) - X(Flow_at_A,M3)
+     
+      - X(Irrigation,M3) =E= 0 ; (LHS = -1, INFES = 1 ****)
+     
+REMAINING 3 ENTRIES SKIPPED
+
+
+---- Reservior_Massbalance  =E=  Reservior Mass balance (Volume)
+
+Reservior_Massbalance(M2)..  - X(Reservior,M1) + X(Reservior,M2) + X(Spill,M2)
+     
+      + X(Turbine,M2) =E= 2 ; (LHS = 1, INFES = 1 ****)
+     
+Reservior_Massbalance(M3)..  - X(Reservior,M2) + X(Reservior,M3) + X(Spill,M3)
+     
+      + X(Turbine,M3) =E= 3 ; (LHS = 1, INFES = 2 ****)
+     
+Reservior_Massbalance(M4)..  - X(Reservior,M3) + X(Reservior,M4) + X(Spill,M4)
+     
+      + X(Turbine,M4) =E= 4 ; (LHS = 0, INFES = 4 ****)
+     
+REMAINING 2 ENTRIES SKIPPED
+
+
+---- Initial_Reservior  =E=  Reservior Mass balance at first timestep (Volume)
+
+Initial_Reservior(M1)..  X(Reservior,M1) + X(Spill,M1) + X(Turbine,M1) =E= 7 ;
+     
+      (LHS = 6, INFES = 1 ****)
+     
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/24/20 12:45:52 Page 7
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Column Listing      SOLVE ChangeBasis Using LP From line 134
+
+
+---- X  Water volume at location Loc at time T  (volume units)
+
+X(Reservior,M1)
+                (.LO, .L, .UP, .M = 0, 6, +INF, 0)
+        1       Reservior_capacity(M1)
+       -1       Reservior_Massbalance(M2)
+        1       Initial_Reservior(M1)
+
+X(Reservior,M2)
+                (.LO, .L, .UP, .M = 0, 7, +INF, 0)
+        1       Reservior_capacity(M2)
+        1       Reservior_Massbalance(M2)
+       -1       Reservior_Massbalance(M3)
+
+X(Reservior,M3)
+                (.LO, .L, .UP, .M = 0, 8, +INF, 0)
+        1       Reservior_capacity(M3)
+        1       Reservior_Massbalance(M3)
+       -1       Reservior_Massbalance(M4)
+
+REMAINING 27 ENTRIES SKIPPED
+
+---- Max_Z  Objective Function value
+
+Max_Z
+                (.LO, .L, .UP, .M = -INF, 51.6, +INF, 0)
+        1       Max_benefit
+
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/24/20 12:45:52 Page 8
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Model Statistics    SOLVE ChangeBasis Using LP From line 134
+
+
+LOOPS                                  RUN   r2
+
+
+MODEL STATISTICS
+
+BLOCKS OF EQUATIONS           8     SINGLE EQUATIONS           32
+BLOCKS OF VARIABLES           2     SINGLE VARIABLES           31
+NON ZERO ELEMENTS            79
+
+
+GENERATION TIME      =        0.016 SECONDS      4 MB  32.2.0 rc62c018 WEX-WEI
+               L O O P S                RUN r2
+
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/24/20 12:45:52 Page 9
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE ChangeBasis Using LP From line 134
+
+
+               S O L V E      S U M M A R Y
+
+     MODEL   ChangeBasis         OBJECTIVE  Max_Z
+     TYPE    LP                  DIRECTION  MAXIMIZE
+     SOLVER  CPLEX               FROM LINE  134
+
+**** SOLVER STATUS     1 Normal Completion         
+**** MODEL STATUS      1 Optimal                   
+**** OBJECTIVE VALUE               38.8000
+
+ RESOURCE USAGE, LIMIT          0.000 10000000000.000
+ ITERATION COUNT, LIMIT        20    2147483647
+
+IBM ILOG CPLEX   32.2.0 rc62c018 Released Aug 26, 2020 WEI x86 64bit/MS Window
+--- GAMS/Cplex Link licensed for continuous and discrete problems.
+Cplex 12.10.0.0
+
+Space for names approximately 0.00 Mb
+Use option 'names no' to turn use of names off
+LP status(1): optimal
+Cplex Time: 0.00sec (det. 0.09 ticks)
+Optimal solution found.
+Objective :          38.800000
+
+
+                       LOWER     LEVEL     UPPER    MARGINAL
+
+---- EQU Max_benef~      .         .         .        1.000      
+
+  Max_benefit  Objective function i.e. to maximize the benefit ($)
+
+---- EQU Reservior_capacity  Reservior capacity constraint (volume)
+
+      LOWER     LEVEL     UPPER    MARGINAL
+
+M1     -INF      5.000     9.000      .         
+M2     -INF      5.000     9.000      .         
+M3     -INF      6.000     9.000      .         
+M4     -INF      8.000     9.000      .         
+M5     -INF      7.000     9.000      .         
+M6     -INF      5.000     9.000      .         
+
+---- EQU FlowA  flow rate at point A (volume per time)
+
+      LOWER     LEVEL     UPPER    MARGINAL
+
+M1     2.000     2.000     +INF     -2.300      
+M2     2.000     2.000     +INF     -2.200      
+M3     2.000     2.000     +INF     -2.100      
+M4     2.000     2.000     +INF     -2.000      
+M5     2.000     2.000     +INF     -2.200      
+M6     2.000     2.000     +INF     -2.200      
+
+                       LOWER     LEVEL     UPPER    MARGINAL
+
+---- EQU EndStorag~     5.000     5.000     +INF     -3.900      
+
+  EndStorage_Constraint  Ending storage in reservior constraint (volume)
+
+---- EQU Turbine_capacity  Maximum volume turbine can pass per time T (Volume pe
+                           r time)
+
+      LOWER     LEVEL     UPPER    MARGINAL
+
+M1     -INF      2.000     4.000      .         
+M2     -INF      2.000     4.000      .         
+M3     -INF      2.000     4.000      .         
+M4     -INF      2.000     4.000      .         
+M5     -INF      4.000     4.000     0.300      
+M6     -INF      4.000     4.000     0.300      
+
+---- EQU Massbalance_pointB  Max balance at point B at any time T
+
+      LOWER     LEVEL     UPPER    MARGINAL
+
+M1      .         .         .       -2.300      
+M2      .         .         .       -2.200      
+M3      .         .         .       -2.100      
+M4      .         .         .       -2.000      
+M5      .         .         .       -2.200      
+M6      .         .         .       -2.200      
+
+---- EQU Reservior_Massbalance  Reservior Mass balance (Volume)
+
+      LOWER     LEVEL     UPPER    MARGINAL
+
+M2     2.000     2.000     2.000     3.900      
+M3     3.000     3.000     3.000     3.900      
+M4     4.000     4.000     4.000     3.900      
+M5     3.000     3.000     3.000     3.900      
+M6     2.000     2.000     2.000     3.900      
+
+---- EQU Initial_Reservior  Reservior Mass balance at first timestep (Volume)
+
+      LOWER     LEVEL     UPPER    MARGINAL
+
+M1     7.000     7.000     7.000     3.900      
+
+---- VAR X  Water volume at location Loc at time T  (volume units)
+
+                 LOWER     LEVEL     UPPER    MARGINAL
+
+Reservior .M1      .        5.000     +INF       .         
+Reservior .M2      .        5.000     +INF       .         
+Reservior .M3      .        6.000     +INF       .         
+Reservior .M4      .        8.000     +INF       .         
+Reservior .M5      .        7.000     +INF       .         
+Reservior .M6      .        5.000     +INF       .         
+Spill     .M1      .         .        +INF     -1.600      
+Spill     .M2      .         .        +INF     -1.700      
+Spill     .M3      .         .        +INF     -1.800      
+Spill     .M4      .         .        +INF     -1.900      
+Spill     .M5      .         .        +INF     -1.700      
+Spill     .M6      .         .        +INF     -1.700      
+Turbine   .M1      .        2.000     +INF       .         
+Turbine   .M2      .        2.000     +INF       .         
+Turbine   .M3      .        2.000     +INF       .         
+Turbine   .M4      .        2.000     +INF       .         
+Turbine   .M5      .        4.000     +INF       .         
+Turbine   .M6      .        4.000     +INF       .         
+Flow_at_A .M1      .        2.000     +INF       .         
+Flow_at_A .M2      .        2.000     +INF       .         
+Flow_at_A .M3      .        2.000     +INF       .         
+Flow_at_A .M4      .        2.000     +INF       .         
+Flow_at_A .M5      .        2.000     +INF       .         
+Flow_at_A .M6      .        2.000     +INF       .         
+Irrigation.M1      .         .        +INF     -1.300      
+Irrigation.M2      .         .        +INF     -1.000      
+Irrigation.M3      .         .        +INF     -0.200      
+Irrigation.M4      .         .        +INF       .         
+Irrigation.M5      .        2.000     +INF       .         
+Irrigation.M6      .        2.000     +INF       .         
+
+                       LOWER     LEVEL     UPPER    MARGINAL
+
+---- VAR Max_Z          -INF     38.800     +INF       .         
+
+  Max_Z  Objective Function value
+
+
+**** REPORT SUMMARY :        0     NONOPT
+                             0 INFEASIBLE
+                             0  UNBOUNDED
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/24/20 12:45:52 Page 10
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Equation Listing    SOLVE ChangeBasis Using LP From line 134
+
+
+---- Max_benefit  =E=  Objective function i.e. to maximize the benefit ($)
+
+Max_benefit..  - 1.6*X(Turbine,M1) - 1.7*X(Turbine,M2) - 1.8*X(Turbine,M3)
+     
+      - 1.9*X(Turbine,M4) - 2*X(Turbine,M5) - 2*X(Turbine,M6) - X(Irrigation,M1)
+     
+      - 1.2*X(Irrigation,M2) - 1.9*X(Irrigation,M3) - 2*X(Irrigation,M4)
+     
+      - 2.2*X(Irrigation,M5) - 2.2*X(Irrigation,M6) + Max_Z =E= 0 ;
+     
+      (LHS = 38.8, INFES = 38.8 ****)
+     
+
+---- Reservior_capacity  =L=  Reservior capacity constraint (volume)
+
+Reservior_capacity(M1)..  X(Reservior,M1) =L= 9 ; (LHS = 5)
+     
+Reservior_capacity(M2)..  X(Reservior,M2) =L= 9 ; (LHS = 5)
+     
+Reservior_capacity(M3)..  X(Reservior,M3) =L= 9 ; (LHS = 6)
+     
+REMAINING 3 ENTRIES SKIPPED
+
+
+---- FlowA  =G=  flow rate at point A (volume per time)
+
+FlowA(M1)..  X(Flow_at_A,M1) =G= 3 ; (LHS = 2, INFES = 1 ****)
+     
+FlowA(M2)..  X(Flow_at_A,M2) =G= 3 ; (LHS = 2, INFES = 1 ****)
+     
+FlowA(M3)..  X(Flow_at_A,M3) =G= 3 ; (LHS = 2, INFES = 1 ****)
+     
+REMAINING 3 ENTRIES SKIPPED
+
+
+---- EndStorage_Constraint  =G=  Ending storage in reservior constraint (volume)
+
+EndStorage_Constraint..  X(Reservior,M6) =G= 5 ; (LHS = 5)
+     
+
+---- Turbine_capacity  =L=  Maximum volume turbine can pass per time T (Volume p
+                            er time)
+
+Turbine_capacity(M1)..  X(Turbine,M1) =L= 4 ; (LHS = 0)
+     
+Turbine_capacity(M2)..  X(Turbine,M2) =L= 4 ; (LHS = 0)
+     
+Turbine_capacity(M3)..  X(Turbine,M3) =L= 4 ; (LHS = 0)
+     
+REMAINING 3 ENTRIES SKIPPED
+
+
+---- Massbalance_pointB  =E=  Max balance at point B at any time T
+
+Massbalance_pointB(M1)..  X(Spill,M1) + X(Turbine,M1) - X(Flow_at_A,M1)
+     
+      - X(Irrigation,M1) =E= 0 ; (LHS = -2, INFES = 2 ****)
+     
+Massbalance_pointB(M2)..  X(Spill,M2) + X(Turbine,M2) - X(Flow_at_A,M2)
+     
+      - X(Irrigation,M2) =E= 0 ; (LHS = -2, INFES = 2 ****)
+     
+Massbalance_pointB(M3)..  X(Spill,M3) + X(Turbine,M3) - X(Flow_at_A,M3)
+     
+      - X(Irrigation,M3) =E= 0 ; (LHS = -2, INFES = 2 ****)
+     
+REMAINING 3 ENTRIES SKIPPED
+
+
+---- Reservior_Massbalance  =E=  Reservior Mass balance (Volume)
+
+Reservior_Massbalance(M2)..  - X(Reservior,M1) + X(Reservior,M2) + X(Spill,M2)
+     
+      + X(Turbine,M2) =E= 2 ; (LHS = 0, INFES = 2 ****)
+     
+Reservior_Massbalance(M3)..  - X(Reservior,M2) + X(Reservior,M3) + X(Spill,M3)
+     
+      + X(Turbine,M3) =E= 3 ; (LHS = 1, INFES = 2 ****)
+     
+Reservior_Massbalance(M4)..  - X(Reservior,M3) + X(Reservior,M4) + X(Spill,M4)
+     
+      + X(Turbine,M4) =E= 4 ; (LHS = 2, INFES = 2 ****)
+     
+REMAINING 2 ENTRIES SKIPPED
+
+
+---- Initial_Reservior  =E=  Reservior Mass balance at first timestep (Volume)
+
+Initial_Reservior(M1)..  X(Reservior,M1) + X(Spill,M1) + X(Turbine,M1) =E= 7 ;
+     
+      (LHS = 5, INFES = 2 ****)
+     
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/24/20 12:45:52 Page 11
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Column Listing      SOLVE ChangeBasis Using LP From line 134
+
+
+---- X  Water volume at location Loc at time T  (volume units)
+
+X(Reservior,M1)
+                (.LO, .L, .UP, .M = 0, 5, +INF, 0)
+        1       Reservior_capacity(M1)
+       -1       Reservior_Massbalance(M2)
+        1       Initial_Reservior(M1)
+
+X(Reservior,M2)
+                (.LO, .L, .UP, .M = 0, 5, +INF, 0)
+        1       Reservior_capacity(M2)
+        1       Reservior_Massbalance(M2)
+       -1       Reservior_Massbalance(M3)
+
+X(Reservior,M3)
+                (.LO, .L, .UP, .M = 0, 6, +INF, 0)
+        1       Reservior_capacity(M3)
+        1       Reservior_Massbalance(M3)
+       -1       Reservior_Massbalance(M4)
+
+REMAINING 27 ENTRIES SKIPPED
+
+---- Max_Z  Objective Function value
+
+Max_Z
+                (.LO, .L, .UP, .M = -INF, 38.8, +INF, 0)
+        1       Max_benefit
+
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/24/20 12:45:52 Page 12
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Model Statistics    SOLVE ChangeBasis Using LP From line 134
+
+
+LOOPS                                  RUN   r3
+
+
+MODEL STATISTICS
+
+BLOCKS OF EQUATIONS           8     SINGLE EQUATIONS           32
+BLOCKS OF VARIABLES           2     SINGLE VARIABLES           31
+NON ZERO ELEMENTS            79
+
+
+GENERATION TIME      =        0.032 SECONDS      4 MB  32.2.0 rc62c018 WEX-WEI
+               L O O P S                RUN r3
+
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/24/20 12:45:52 Page 13
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE ChangeBasis Using LP From line 134
+
+
+               S O L V E      S U M M A R Y
+
+     MODEL   ChangeBasis         OBJECTIVE  Max_Z
+     TYPE    LP                  DIRECTION  MAXIMIZE
+     SOLVER  CPLEX               FROM LINE  134
+
+**** SOLVER STATUS     1 Normal Completion         
+**** MODEL STATUS      4 Infeasible                
+**** OBJECTIVE VALUE               24.6000
+
+ RESOURCE USAGE, LIMIT          0.000 10000000000.000
+ ITERATION COUNT, LIMIT        25    2147483647
+
+IBM ILOG CPLEX   32.2.0 rc62c018 Released Aug 26, 2020 WEI x86 64bit/MS Window
+--- GAMS/Cplex Link licensed for continuous and discrete problems.
+Cplex 12.10.0.0
+
+Space for names approximately 0.00 Mb
+Use option 'names no' to turn use of names off
+LP status(3): infeasible
+Cplex Time: 0.00sec (det. 0.10 ticks)
+Model has been proven infeasible.
+
+                       LOWER     LEVEL     UPPER    MARGINAL
+
+---- EQU Max_benef~      .         .         .        1.000      
+
+  Max_benefit  Objective function i.e. to maximize the benefit ($)
+
+---- EQU Reservior_capacity  Reservior capacity constraint (volume)
+
+      LOWER     LEVEL     UPPER    MARGINAL
+
+M1     -INF      4.000     9.000      .         
+M2     -INF      3.000     9.000      .         
+M3     -INF      3.000     9.000      .         
+M4     -INF      4.000     9.000      .         
+M5     -INF      4.000     9.000      .         
+M6     -INF      5.000     9.000      .         
+
+---- EQU FlowA  flow rate at point A (volume per time)
+
+      LOWER     LEVEL     UPPER    MARGINAL
+
+M1     3.000     3.000     +INF     -2.600      
+M2     3.000     3.000     +INF     -2.500      
+M3     3.000     3.000     +INF     -2.400      
+M4     3.000     3.000     +INF     -2.300      
+M5     3.000     3.000     +INF     -2.200      
+M6     3.000     3.000     +INF     -2.200      
+
+                       LOWER     LEVEL     UPPER    MARGINAL
+
+---- EQU EndStorag~     5.000     5.000     +INF     -4.200      
+
+  EndStorage_Constraint  Ending storage in reservior constraint (volume)
+
+---- EQU Turbine_capacity  Maximum volume turbine can pass per time T (Volume pe
+                           r time)
+
+      LOWER     LEVEL     UPPER    MARGINAL
+
+M1     -INF      3.000     4.000      .         
+M2     -INF      3.000     4.000      .         
+M3     -INF      3.000     4.000      .         
+M4     -INF      3.000     4.000      .         
+M5     -INF      3.000     4.000      .         
+M6     -INF      1.000     4.000      .         
+
+---- EQU Massbalance_pointB  Max balance at point B at any time T
+
+      LOWER     LEVEL     UPPER    MARGINAL
+
+M1      .         .         .       -2.600      
+M2      .         .         .       -2.500      
+M3      .         .         .       -2.400      
+M4      .         .         .       -2.300      
+M5      .         .         .       -2.200      
+M6      .         .         .       -2.200      
+
+---- EQU Reservior_Massbalance  Reservior Mass balance (Volume)
+
+      LOWER     LEVEL     UPPER    MARGINAL
+
+M2     2.000     2.000     2.000     4.200      
+M3     3.000     3.000     3.000     4.200      
+M4     4.000     4.000     4.000     4.200      
+M5     3.000     3.000     3.000     4.200      
+M6     2.000     2.000     2.000     4.200      
+
+---- EQU Initial_Reservior  Reservior Mass balance at first timestep (Volume)
+
+      LOWER     LEVEL     UPPER    MARGINAL
+
+M1     7.000     7.000     7.000     4.200      
+
+---- VAR X  Water volume at location Loc at time T  (volume units)
+
+                 LOWER     LEVEL     UPPER    MARGINAL
+
+Reservior .M1      .        4.000     +INF       .         
+Reservior .M2      .        3.000     +INF       .         
+Reservior .M3      .        3.000     +INF       .         
+Reservior .M4      .        4.000     +INF       .         
+Reservior .M5      .        4.000     +INF       .         
+Reservior .M6      .        5.000     +INF       .         
+Spill     .M1      .         .        +INF     -1.600      
+Spill     .M2      .         .        +INF     -1.700      
+Spill     .M3      .         .        +INF     -1.800      
+Spill     .M4      .         .        +INF     -1.900      
+Spill     .M5      .         .        +INF     -2.000      
+Spill     .M6      .         .        +INF     -2.000      
+Turbine   .M1      .        3.000     +INF       .         
+Turbine   .M2      .        3.000     +INF       .         
+Turbine   .M3      .        3.000     +INF       .         
+Turbine   .M4      .        3.000     +INF       .         
+Turbine   .M5      .        3.000     +INF       .         
+Turbine   .M6      .        1.000     +INF       .         
+Flow_at_A .M1      .        3.000     +INF       .         
+Flow_at_A .M2      .        3.000     +INF       .         
+Flow_at_A .M3      .        3.000     +INF       .         
+Flow_at_A .M4      .        3.000     +INF       .         
+Flow_at_A .M5      .        3.000     +INF       .         
+Flow_at_A .M6      .        3.000     +INF       .         
+Irrigation.M1      .         .        +INF     -1.600      
+Irrigation.M2      .         .        +INF     -1.300      
+Irrigation.M3      .         .        +INF     -0.500      
+Irrigation.M4      .         .        +INF     -0.300      
+Irrigation.M5      .         .        +INF       EPS       
+Irrigation.M6      .       -2.000     +INF       .    INFES
+
+                       LOWER     LEVEL     UPPER    MARGINAL
+
+---- VAR Max_Z          -INF     24.600     +INF       .         
+
+  Max_Z  Objective Function value
+
+
+**** REPORT SUMMARY :        0     NONOPT
+                             1 INFEASIBLE (INFES)
+                    SUM      2.000
+                    MAX      2.000
+                    MEAN     2.000
+                             0  UNBOUNDED
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/24/20 12:45:52 Page 14
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Equation Listing    SOLVE ChangeBasis Using LP From line 134
+
+
+---- Max_benefit  =E=  Objective function i.e. to maximize the benefit ($)
+
+Max_benefit..  - 1.6*X(Turbine,M1) - 1.7*X(Turbine,M2) - 1.8*X(Turbine,M3)
+     
+      - 1.9*X(Turbine,M4) - 2*X(Turbine,M5) - 2*X(Turbine,M6) - X(Irrigation,M1)
+     
+      - 1.2*X(Irrigation,M2) - 1.9*X(Irrigation,M3) - 2*X(Irrigation,M4)
+     
+      - 2.2*X(Irrigation,M5) - 2.2*X(Irrigation,M6) + Max_Z =E= 0 ;
+     
+      (LHS = 24.6, INFES = 24.6 ****)
+     
+
+---- Reservior_capacity  =L=  Reservior capacity constraint (volume)
+
+Reservior_capacity(M1)..  X(Reservior,M1) =L= 9 ; (LHS = 4)
+     
+Reservior_capacity(M2)..  X(Reservior,M2) =L= 9 ; (LHS = 3)
+     
+Reservior_capacity(M3)..  X(Reservior,M3) =L= 9 ; (LHS = 3)
+     
+REMAINING 3 ENTRIES SKIPPED
+
+
+---- FlowA  =G=  flow rate at point A (volume per time)
+
+FlowA(M1)..  X(Flow_at_A,M1) =G= 4 ; (LHS = 3, INFES = 1 ****)
+     
+FlowA(M2)..  X(Flow_at_A,M2) =G= 4 ; (LHS = 3, INFES = 1 ****)
+     
+FlowA(M3)..  X(Flow_at_A,M3) =G= 4 ; (LHS = 3, INFES = 1 ****)
+     
+REMAINING 3 ENTRIES SKIPPED
+
+
+---- EndStorage_Constraint  =G=  Ending storage in reservior constraint (volume)
+
+EndStorage_Constraint..  X(Reservior,M6) =G= 5 ; (LHS = 5)
+     
+
+---- Turbine_capacity  =L=  Maximum volume turbine can pass per time T (Volume p
+                            er time)
+
+Turbine_capacity(M1)..  X(Turbine,M1) =L= 4 ; (LHS = 0)
+     
+Turbine_capacity(M2)..  X(Turbine,M2) =L= 4 ; (LHS = 0)
+     
+Turbine_capacity(M3)..  X(Turbine,M3) =L= 4 ; (LHS = 0)
+     
+REMAINING 3 ENTRIES SKIPPED
+
+
+---- Massbalance_pointB  =E=  Max balance at point B at any time T
+
+Massbalance_pointB(M1)..  X(Spill,M1) + X(Turbine,M1) - X(Flow_at_A,M1)
+     
+      - X(Irrigation,M1) =E= 0 ; (LHS = -3, INFES = 3 ****)
+     
+Massbalance_pointB(M2)..  X(Spill,M2) + X(Turbine,M2) - X(Flow_at_A,M2)
+     
+      - X(Irrigation,M2) =E= 0 ; (LHS = -3, INFES = 3 ****)
+     
+Massbalance_pointB(M3)..  X(Spill,M3) + X(Turbine,M3) - X(Flow_at_A,M3)
+     
+      - X(Irrigation,M3) =E= 0 ; (LHS = -3, INFES = 3 ****)
+     
+REMAINING 3 ENTRIES SKIPPED
+
+
+---- Reservior_Massbalance  =E=  Reservior Mass balance (Volume)
+
+Reservior_Massbalance(M2)..  - X(Reservior,M1) + X(Reservior,M2) + X(Spill,M2)
+     
+      + X(Turbine,M2) =E= 2 ; (LHS = -1, INFES = 3 ****)
+     
+Reservior_Massbalance(M3)..  - X(Reservior,M2) + X(Reservior,M3) + X(Spill,M3)
+     
+      + X(Turbine,M3) =E= 3 ; (LHS = 0, INFES = 3 ****)
+     
+Reservior_Massbalance(M4)..  - X(Reservior,M3) + X(Reservior,M4) + X(Spill,M4)
+     
+      + X(Turbine,M4) =E= 4 ; (LHS = 1, INFES = 3 ****)
+     
+REMAINING 2 ENTRIES SKIPPED
+
+
+---- Initial_Reservior  =E=  Reservior Mass balance at first timestep (Volume)
+
+Initial_Reservior(M1)..  X(Reservior,M1) + X(Spill,M1) + X(Turbine,M1) =E= 7 ;
+     
+      (LHS = 4, INFES = 3 ****)
+     
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/24/20 12:45:52 Page 15
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Column Listing      SOLVE ChangeBasis Using LP From line 134
+
+
+---- X  Water volume at location Loc at time T  (volume units)
+
+X(Reservior,M1)
+                (.LO, .L, .UP, .M = 0, 4, +INF, 0)
+        1       Reservior_capacity(M1)
+       -1       Reservior_Massbalance(M2)
+        1       Initial_Reservior(M1)
+
+X(Reservior,M2)
+                (.LO, .L, .UP, .M = 0, 3, +INF, 0)
+        1       Reservior_capacity(M2)
+        1       Reservior_Massbalance(M2)
+       -1       Reservior_Massbalance(M3)
+
+X(Reservior,M3)
+                (.LO, .L, .UP, .M = 0, 3, +INF, 0)
+        1       Reservior_capacity(M3)
+        1       Reservior_Massbalance(M3)
+       -1       Reservior_Massbalance(M4)
+
+REMAINING 27 ENTRIES SKIPPED
+
+---- Max_Z  Objective Function value
+
+Max_Z
+                (.LO, .L, .UP, .M = -INF, 24.6, +INF, 0)
+        1       Max_benefit
+
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/24/20 12:45:52 Page 16
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Model Statistics    SOLVE ChangeBasis Using LP From line 134
+
+
+LOOPS                                  RUN   r4
+
+
+MODEL STATISTICS
+
+BLOCKS OF EQUATIONS           8     SINGLE EQUATIONS           32
+BLOCKS OF VARIABLES           2     SINGLE VARIABLES           31
+NON ZERO ELEMENTS            79
+
+
+GENERATION TIME      =        0.016 SECONDS      4 MB  32.2.0 rc62c018 WEX-WEI
+               L O O P S                RUN r4
+
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/24/20 12:45:52 Page 17
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE ChangeBasis Using LP From line 134
+
+
+               S O L V E      S U M M A R Y
+
+     MODEL   ChangeBasis         OBJECTIVE  Max_Z
+     TYPE    LP                  DIRECTION  MAXIMIZE
+     SOLVER  CPLEX               FROM LINE  134
+
+**** SOLVER STATUS     1 Normal Completion         
+**** MODEL STATUS      4 Infeasible                
+**** OBJECTIVE VALUE               13.0000
+
+ RESOURCE USAGE, LIMIT          0.093 10000000000.000
+ ITERATION COUNT, LIMIT         0    2147483647
+
+IBM ILOG CPLEX   32.2.0 rc62c018 Released Aug 26, 2020 WEI x86 64bit/MS Window
+--- GAMS/Cplex Link licensed for continuous and discrete problems.
+Cplex 12.10.0.0
+
+Space for names approximately 0.00 Mb
+Use option 'names no' to turn use of names off
+LP status(3): infeasible
+Cplex Time: 0.00sec (det. 0.03 ticks)
+Rerunning with presolve turned off and solving with LPMETHOD=1
+LP status(3): infeasible
+Cplex Time: 0.09sec (det. 0.01 ticks)
+Model has been proven infeasible.
+
+                       LOWER     LEVEL     UPPER    MARGINAL
+
+---- EQU Max_benef~      .         .         .        1.000      
+
+  Max_benefit  Objective function i.e. to maximize the benefit ($)
+
+---- EQU Reservior_capacity  Reservior capacity constraint (volume)
+
+      LOWER     LEVEL     UPPER    MARGINAL
+
+M1     -INF      3.000     9.000      .         
+M2     -INF      1.000     9.000      .         
+M3     -INF       .        9.000      .         
+M4     -INF       .        9.000      .         
+M5     -INF     -1.000     9.000      .         
+M6     -INF      5.000     9.000      .         
+
+---- EQU FlowA  flow rate at point A (volume per time)
+
+      LOWER     LEVEL     UPPER    MARGINAL
+
+M1     4.000     4.000     +INF      3.000  NOPT
+M2     4.000     4.000     +INF      3.000  NOPT
+M3     4.000     4.000     +INF      3.000  NOPT
+M4     4.000     4.000     +INF      3.000  NOPT
+M5     4.000     4.000     +INF      3.000  NOPT
+M6     4.000     4.000     +INF      1.000  NOPT
+
+                       LOWER     LEVEL     UPPER    MARGINAL
+
+---- EQU EndStorag~     5.000     5.000     +INF      2.000  NOPT
+
+  EndStorage_Constraint  Ending storage in reservior constraint (volume)
+
+---- EQU Turbine_capacity  Maximum volume turbine can pass per time T (Volume pe
+                           r time)
+
+      LOWER     LEVEL     UPPER    MARGINAL
+
+M1     -INF      4.000     4.000      .         
+M2     -INF      4.000     4.000      .         
+M3     -INF      4.000     4.000      .         
+M4     -INF      4.000     4.000      .         
+M5     -INF      4.000     4.000      .         
+M6     -INF     -4.000     4.000      .         
+
+---- EQU Massbalance_pointB  Max balance at point B at any time T
+
+      LOWER     LEVEL     UPPER    MARGINAL
+
+M1      .         .         .        3.000      
+M2      .         .         .        3.000      
+M3      .         .         .        3.000      
+M4      .         .         .        3.000      
+M5      .         .         .        3.000      
+M6      .         .         .        1.000      
+
+---- EQU Reservior_Massbalance  Reservior Mass balance (Volume)
+
+      LOWER     LEVEL     UPPER    MARGINAL
+
+M2     2.000     2.000     2.000    -3.000      
+M3     3.000     3.000     3.000    -3.000      
+M4     4.000     4.000     4.000    -3.000      
+M5     3.000     3.000     3.000    -3.000      
+M6     2.000     2.000     2.000    -2.000      
+
+---- EQU Initial_Reservior  Reservior Mass balance at first timestep (Volume)
+
+      LOWER     LEVEL     UPPER    MARGINAL
+
+M1     7.000     7.000     7.000    -3.000      
+
+---- VAR X  Water volume at location Loc at time T  (volume units)
+
+                 LOWER     LEVEL     UPPER    MARGINAL
+
+Reservior .M1      .        3.000     +INF       .         
+Reservior .M2      .        1.000     +INF       .         
+Reservior .M3      .         .        +INF       .         
+Reservior .M4      .         .        +INF       .         
+Reservior .M5      .       -1.000     +INF       .    INFES
+Reservior .M6      .        5.000     +INF       .         
+Spill     .M1      .         .        +INF       EPS       
+Spill     .M2      .         .        +INF       EPS       
+Spill     .M3      .         .        +INF       EPS       
+Spill     .M4      .         .        +INF       EPS       
+Spill     .M5      .         .        +INF       EPS       
+Spill     .M6      .         .        +INF      1.000  NOPT
+Turbine   .M1      .        4.000     +INF       .         
+Turbine   .M2      .        4.000     +INF       .         
+Turbine   .M3      .        4.000     +INF       .         
+Turbine   .M4      .        4.000     +INF       .         
+Turbine   .M5      .        4.000     +INF       .         
+Turbine   .M6      .       -4.000     +INF       .    INFES
+Flow_at_A .M1      .        4.000     +INF       .         
+Flow_at_A .M2      .        4.000     +INF       .         
+Flow_at_A .M3      .        4.000     +INF       .         
+Flow_at_A .M4      .        4.000     +INF       .         
+Flow_at_A .M5      .        4.000     +INF       .         
+Flow_at_A .M6      .        4.000     +INF       .         
+Irrigation.M1      .         .        +INF      3.000  NOPT
+Irrigation.M2      .         .        +INF      3.000  NOPT
+Irrigation.M3      .         .        +INF      3.000  NOPT
+Irrigation.M4      .         .        +INF      3.000  NOPT
+Irrigation.M5      .         .        +INF      3.000  NOPT
+Irrigation.M6      .       -8.000     +INF       .    INFES
+
+                       LOWER     LEVEL     UPPER    MARGINAL
+
+---- VAR Max_Z          -INF     13.000     +INF       .         
+
+  Max_Z  Objective Function value
+
+
+**** REPORT SUMMARY :       13     NONOPT ( NOPT)
+                             3 INFEASIBLE (INFES)
+                    SUM     13.000
+                    MAX      8.000
+                    MEAN     4.333
+                             0  UNBOUNDED
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/24/20 12:45:52 Page 18
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Equation Listing    SOLVE ChangeBasis Using LP From line 134
+
+
+---- Max_benefit  =E=  Objective function i.e. to maximize the benefit ($)
+
+Max_benefit..  - 1.6*X(Turbine,M1) - 1.7*X(Turbine,M2) - 1.8*X(Turbine,M3)
+     
+      - 1.9*X(Turbine,M4) - 2*X(Turbine,M5) - 2*X(Turbine,M6) - X(Irrigation,M1)
+     
+      - 1.2*X(Irrigation,M2) - 1.9*X(Irrigation,M3) - 2*X(Irrigation,M4)
+     
+      - 2.2*X(Irrigation,M5) - 2.2*X(Irrigation,M6) + Max_Z =E= 0 ;
+     
+      (LHS = 13, INFES = 13 ****)
+     
+
+---- Reservior_capacity  =L=  Reservior capacity constraint (volume)
+
+Reservior_capacity(M1)..  X(Reservior,M1) =L= 9 ; (LHS = 3)
+     
+Reservior_capacity(M2)..  X(Reservior,M2) =L= 9 ; (LHS = 1)
+     
+Reservior_capacity(M3)..  X(Reservior,M3) =L= 9 ; (LHS = 0)
+     
+REMAINING 3 ENTRIES SKIPPED
+
+
+---- FlowA  =G=  flow rate at point A (volume per time)
+
+FlowA(M1)..  X(Flow_at_A,M1) =G= 5 ; (LHS = 4, INFES = 1 ****)
+     
+FlowA(M2)..  X(Flow_at_A,M2) =G= 5 ; (LHS = 4, INFES = 1 ****)
+     
+FlowA(M3)..  X(Flow_at_A,M3) =G= 5 ; (LHS = 4, INFES = 1 ****)
+     
+REMAINING 3 ENTRIES SKIPPED
+
+
+---- EndStorage_Constraint  =G=  Ending storage in reservior constraint (volume)
+
+EndStorage_Constraint..  X(Reservior,M6) =G= 5 ; (LHS = 5)
+     
+
+---- Turbine_capacity  =L=  Maximum volume turbine can pass per time T (Volume p
+                            er time)
+
+Turbine_capacity(M1)..  X(Turbine,M1) =L= 4 ; (LHS = 0)
+     
+Turbine_capacity(M2)..  X(Turbine,M2) =L= 4 ; (LHS = 0)
+     
+Turbine_capacity(M3)..  X(Turbine,M3) =L= 4 ; (LHS = 0)
+     
+REMAINING 3 ENTRIES SKIPPED
+
+
+---- Massbalance_pointB  =E=  Max balance at point B at any time T
+
+Massbalance_pointB(M1)..  X(Spill,M1) + X(Turbine,M1) - X(Flow_at_A,M1)
+     
+      - X(Irrigation,M1) =E= 0 ; (LHS = -4, INFES = 4 ****)
+     
+Massbalance_pointB(M2)..  X(Spill,M2) + X(Turbine,M2) - X(Flow_at_A,M2)
+     
+      - X(Irrigation,M2) =E= 0 ; (LHS = -4, INFES = 4 ****)
+     
+Massbalance_pointB(M3)..  X(Spill,M3) + X(Turbine,M3) - X(Flow_at_A,M3)
+     
+      - X(Irrigation,M3) =E= 0 ; (LHS = -4, INFES = 4 ****)
+     
+REMAINING 3 ENTRIES SKIPPED
+
+
+---- Reservior_Massbalance  =E=  Reservior Mass balance (Volume)
+
+Reservior_Massbalance(M2)..  - X(Reservior,M1) + X(Reservior,M2) + X(Spill,M2)
+     
+      + X(Turbine,M2) =E= 2 ; (LHS = -2, INFES = 4 ****)
+     
+Reservior_Massbalance(M3)..  - X(Reservior,M2) + X(Reservior,M3) + X(Spill,M3)
+     
+      + X(Turbine,M3) =E= 3 ; (LHS = -1, INFES = 4 ****)
+     
+Reservior_Massbalance(M4)..  - X(Reservior,M3) + X(Reservior,M4) + X(Spill,M4)
+     
+      + X(Turbine,M4) =E= 4 ; (LHS = 0, INFES = 4 ****)
+     
+REMAINING 2 ENTRIES SKIPPED
+
+
+---- Initial_Reservior  =E=  Reservior Mass balance at first timestep (Volume)
+
+Initial_Reservior(M1)..  X(Reservior,M1) + X(Spill,M1) + X(Turbine,M1) =E= 7 ;
+     
+      (LHS = 3, INFES = 4 ****)
+     
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/24/20 12:45:52 Page 19
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Column Listing      SOLVE ChangeBasis Using LP From line 134
+
+
+---- X  Water volume at location Loc at time T  (volume units)
+
+X(Reservior,M1)
+                (.LO, .L, .UP, .M = 0, 3, +INF, 0)
+        1       Reservior_capacity(M1)
+       -1       Reservior_Massbalance(M2)
+        1       Initial_Reservior(M1)
+
+X(Reservior,M2)
+                (.LO, .L, .UP, .M = 0, 1, +INF, 0)
+        1       Reservior_capacity(M2)
+        1       Reservior_Massbalance(M2)
+       -1       Reservior_Massbalance(M3)
+
+X(Reservior,M3)
+                (.LO, .L, .UP, .M = 0, 0, +INF, 0)
+        1       Reservior_capacity(M3)
+        1       Reservior_Massbalance(M3)
+       -1       Reservior_Massbalance(M4)
+
+REMAINING 27 ENTRIES SKIPPED
+
+---- Max_Z  Objective Function value
+
+Max_Z
+                (.LO, .L, .UP, .M = -INF, 13, +INF, 0)
+        1       Max_benefit
+
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/24/20 12:45:52 Page 20
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Model Statistics    SOLVE ChangeBasis Using LP From line 134
+
+
+LOOPS                                  RUN   r5
+
+
+MODEL STATISTICS
+
+BLOCKS OF EQUATIONS           8     SINGLE EQUATIONS           32
+BLOCKS OF VARIABLES           2     SINGLE VARIABLES           31  1 projected
+NON ZERO ELEMENTS            79
+
+
+GENERATION TIME      =        0.016 SECONDS      4 MB  32.2.0 rc62c018 WEX-WEI
+               L O O P S                RUN r5
+
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/24/20 12:45:52 Page 21
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE ChangeBasis Using LP From line 134
+
+
+               S O L V E      S U M M A R Y
+
+     MODEL   ChangeBasis         OBJECTIVE  Max_Z
+     TYPE    LP                  DIRECTION  MAXIMIZE
+     SOLVER  CPLEX               FROM LINE  134
+
+**** SOLVER STATUS     1 Normal Completion         
+**** MODEL STATUS      4 Infeasible                
+**** OBJECTIVE VALUE               37.0000
+
+ RESOURCE USAGE, LIMIT          0.078 10000000000.000
+ ITERATION COUNT, LIMIT         5    2147483647
+
+IBM ILOG CPLEX   32.2.0 rc62c018 Released Aug 26, 2020 WEI x86 64bit/MS Window
+--- GAMS/Cplex Link licensed for continuous and discrete problems.
+Cplex 12.10.0.0
+
+Space for names approximately 0.00 Mb
+Use option 'names no' to turn use of names off
+LP status(3): infeasible
+Cplex Time: 0.00sec (det. 0.03 ticks)
+Rerunning with presolve turned off and solving with LPMETHOD=1
+LP status(3): infeasible
+Cplex Time: 0.00sec (det. 0.02 ticks)
+Model has been proven infeasible.
+
+                       LOWER     LEVEL     UPPER    MARGINAL
+
+---- EQU Max_benef~      .         .         .        1.000      
+
+  Max_benefit  Objective function i.e. to maximize the benefit ($)
+
+---- EQU Reservior_capacity  Reservior capacity constraint (volume)
+
+      LOWER     LEVEL     UPPER    MARGINAL
+
+M1     -INF      2.000     9.000      .         
+M2     -INF     -1.000     9.000      .         
+M3     -INF     -3.000     9.000      .         
+M4     -INF     -4.000     9.000      .         
+M5     -INF     -6.000     9.000      .         
+M6     -INF      5.000     9.000      .         
+
+---- EQU FlowA  flow rate at point A (volume per time)
+
+      LOWER     LEVEL     UPPER    MARGINAL
+
+M1     5.000     5.000     +INF      6.000  NOPT
+M2     5.000     5.000     +INF      6.000  NOPT
+M3     5.000     5.000     +INF      5.000  NOPT
+M4     5.000     5.000     +INF      4.000  NOPT
+M5     5.000     5.000     +INF      3.000  NOPT
+M6     5.000     5.000     +INF      1.000  NOPT
+
+                       LOWER     LEVEL     UPPER    MARGINAL
+
+---- EQU EndStorag~     5.000     5.000     +INF      2.000  NOPT
+
+  EndStorage_Constraint  Ending storage in reservior constraint (volume)
+
+---- EQU Turbine_capacity  Maximum volume turbine can pass per time T (Volume pe
+                           r time)
+
+      LOWER     LEVEL     UPPER    MARGINAL
+
+M1     -INF      4.000     4.000      EPS       
+M2     -INF      4.000     4.000      EPS       
+M3     -INF      4.000     4.000      EPS       
+M4     -INF      4.000     4.000      EPS       
+M5     -INF      4.000     4.000      EPS       
+M6     -INF     -9.000     4.000      .         
+
+---- EQU Massbalance_pointB  Max balance at point B at any time T
+
+      LOWER     LEVEL     UPPER    MARGINAL
+
+M1      .         .         .        6.000      
+M2      .         .         .        6.000      
+M3      .         .         .        5.000      
+M4      .         .         .        4.000      
+M5      .         .         .        3.000      
+M6      .         .         .        1.000      
+
+---- EQU Reservior_Massbalance  Reservior Mass balance (Volume)
+
+      LOWER     LEVEL     UPPER    MARGINAL
+
+M2     2.000     2.000     2.000    -6.000      
+M3     3.000     3.000     3.000    -5.000      
+M4     4.000     4.000     4.000    -4.000      
+M5     3.000     3.000     3.000    -3.000      
+M6     2.000     2.000     2.000    -2.000      
+
+---- EQU Initial_Reservior  Reservior Mass balance at first timestep (Volume)
+
+      LOWER     LEVEL     UPPER    MARGINAL
+
+M1     7.000     7.000     7.000    -6.000      
+
+---- VAR X  Water volume at location Loc at time T  (volume units)
+
+                 LOWER     LEVEL     UPPER    MARGINAL
+
+Reservior .M1      .        2.000     +INF       .         
+Reservior .M2      .       -1.000     +INF       .    INFES
+Reservior .M3      .       -3.000     +INF       .    INFES
+Reservior .M4      .       -4.000     +INF       .    INFES
+Reservior .M5      .       -6.000     +INF       .    INFES
+Reservior .M6      .        5.000     +INF       .         
+Spill     .M1      .        1.000     +INF       .         
+Spill     .M2      .        1.000     +INF       .         
+Spill     .M3      .        1.000     +INF       .         
+Spill     .M4      .        1.000     +INF       .         
+Spill     .M5      .        1.000     +INF       .         
+Spill     .M6      .         .        +INF      1.000  NOPT
+Turbine   .M1      .        4.000     +INF       .         
+Turbine   .M2      .        4.000     +INF       .         
+Turbine   .M3      .        4.000     +INF       .         
+Turbine   .M4      .        4.000     +INF       .         
+Turbine   .M5      .        4.000     +INF       .         
+Turbine   .M6      .       -9.000     +INF       .    INFES
+Flow_at_A .M1      .        5.000     +INF       .         
+Flow_at_A .M2      .        5.000     +INF       .         
+Flow_at_A .M3      .        5.000     +INF       .         
+Flow_at_A .M4      .        5.000     +INF       .         
+Flow_at_A .M5      .        5.000     +INF       .         
+Flow_at_A .M6      .        5.000     +INF       .         
+Irrigation.M1      .         .        +INF      6.000  NOPT
+Irrigation.M2      .         .        +INF      6.000  NOPT
+Irrigation.M3      .         .        +INF      5.000  NOPT
+Irrigation.M4      .         .        +INF      4.000  NOPT
+Irrigation.M5      .         .        +INF      3.000  NOPT
+Irrigation.M6      .      -14.000     +INF       .    INFES
+
+                       LOWER     LEVEL     UPPER    MARGINAL
+
+---- VAR Max_Z          -INF     37.000     +INF       .         
+
+  Max_Z  Objective Function value
+
+
+**** REPORT SUMMARY :       13     NONOPT ( NOPT)
+                             6 INFEASIBLE (INFES)
+                    SUM     37.000
+                    MAX     14.000
+                    MEAN     6.167
+                             0  UNBOUNDED
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/24/20 12:45:52 Page 22
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Equation Listing    SOLVE Benefit Using LP From line 154
+
+
+---- Max_benefit  =E=  Objective function i.e. to maximize the benefit ($)
+
+Max_benefit..  - 1.6*X(Turbine,M1) - 1.7*X(Turbine,M2) - 1.8*X(Turbine,M3)
+     
+      - 1.9*X(Turbine,M4) - 2*X(Turbine,M5) - 2*X(Turbine,M6) - X(Irrigation,M1)
+     
+      - 1.2*X(Irrigation,M2) - 1.9*X(Irrigation,M3) - 2*X(Irrigation,M4)
+     
+      - 2.2*X(Irrigation,M5) - 2.2*X(Irrigation,M6) + Max_Z =E= 0 ;
+     
+      (LHS = 1, INFES = 1 ****)
+     
+
+---- Reservior_capacity  =L=  Reservior capacity constraint (volume)
+
+Reservior_capacity(M1)..  X(Reservior,M1) =L= 9 ; (LHS = 2)
+     
+Reservior_capacity(M2)..  X(Reservior,M2) =L= 9 ; (LHS = 0)
+     
+Reservior_capacity(M3)..  X(Reservior,M3) =L= 9 ; (LHS = 0)
+     
+REMAINING 3 ENTRIES SKIPPED
+
+
+---- PointA_Constraint  =G=  Minimum flow constraint at point A (volume per time
+                             )
+
+PointA_Constraint(M1)..  X(Flow_at_A,M1) =G= 1 ; (LHS = 5)
+     
+PointA_Constraint(M2)..  X(Flow_at_A,M2) =G= 1 ; (LHS = 5)
+     
+PointA_Constraint(M3)..  X(Flow_at_A,M3) =G= 1 ; (LHS = 5)
+     
+REMAINING 3 ENTRIES SKIPPED
+
+
+---- EndStorage_Constraint  =G=  Ending storage in reservior constraint (volume)
+
+EndStorage_Constraint..  X(Reservior,M6) =G= 5 ; (LHS = 5)
+     
+
+---- Turbine_capacity  =L=  Maximum volume turbine can pass per time T (Volume p
+                            er time)
+
+Turbine_capacity(M1)..  X(Turbine,M1) =L= 4 ; (LHS = 4)
+     
+Turbine_capacity(M2)..  X(Turbine,M2) =L= 4 ; (LHS = 4)
+     
+Turbine_capacity(M3)..  X(Turbine,M3) =L= 4 ; (LHS = 4)
+     
+REMAINING 3 ENTRIES SKIPPED
+
+
+---- Massbalance_pointB  =E=  Max balance at point B at any time T
+
+Massbalance_pointB(M1)..  X(Spill,M1) + X(Turbine,M1) - X(Flow_at_A,M1)
+     
+      - X(Irrigation,M1) =E= 0 ; (LHS = 0)
+     
+Massbalance_pointB(M2)..  X(Spill,M2) + X(Turbine,M2) - X(Flow_at_A,M2)
+     
+      - X(Irrigation,M2) =E= 0 ; (LHS = 0)
+     
+Massbalance_pointB(M3)..  X(Spill,M3) + X(Turbine,M3) - X(Flow_at_A,M3)
+     
+      - X(Irrigation,M3) =E= 0 ; (LHS = 0)
+     
+REMAINING 3 ENTRIES SKIPPED
+
+
+---- Reservior_Massbalance  =E=  Reservior Mass balance (Volume)
+
+Reservior_Massbalance(M2)..  - X(Reservior,M1) + X(Reservior,M2) + X(Spill,M2)
+     
+      + X(Turbine,M2) =E= 2 ; (LHS = 3, INFES = 1 ****)
+     
+Reservior_Massbalance(M3)..  - X(Reservior,M2) + X(Reservior,M3) + X(Spill,M3)
+     
+      + X(Turbine,M3) =E= 3 ; (LHS = 5, INFES = 2 ****)
+     
+Reservior_Massbalance(M4)..  - X(Reservior,M3) + X(Reservior,M4) + X(Spill,M4)
+     
+      + X(Turbine,M4) =E= 4 ; (LHS = 5, INFES = 1 ****)
+     
+REMAINING 2 ENTRIES SKIPPED
+
+
+---- Initial_Reservior  =E=  Reservior Mass balance at first timestep (Volume)
+
+Initial_Reservior(M1)..  X(Reservior,M1) + X(Spill,M1) + X(Turbine,M1) =E= 7 ;
+     
+      (LHS = 7)
+     
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/24/20 12:45:52 Page 23
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Column Listing      SOLVE Benefit Using LP From line 154
+
+
+---- X  Water volume at location Loc at time T  (volume units)
+
+X(Reservior,M1)
+                (.LO, .L, .UP, .M = 0, 2, +INF, 0)
+        1       Reservior_capacity(M1)
+       -1       Reservior_Massbalance(M2)
+        1       Initial_Reservior(M1)
+
+X(Reservior,M2)
+                (.LO, .L, .UP, .M = 0, 0, +INF, 0)
+        1       Reservior_capacity(M2)
+        1       Reservior_Massbalance(M2)
+       -1       Reservior_Massbalance(M3)
+       -1       (OLD LEVEL ****)
+
+X(Reservior,M3)
+                (.LO, .L, .UP, .M = 0, 0, +INF, 0)
+        1       Reservior_capacity(M3)
+        1       Reservior_Massbalance(M3)
+       -1       Reservior_Massbalance(M4)
+       -3       (OLD LEVEL ****)
+
+REMAINING 27 ENTRIES SKIPPED
+
+---- Max_Z  Objective Function value
+
+Max_Z
+                (.LO, .L, .UP, .M = -INF, 37, +INF, 0)
+        1       Max_benefit
+
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/24/20 12:45:52 Page 24
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Model Statistics    SOLVE Benefit Using LP From line 154
+
+
+MODEL STATISTICS
+
+BLOCKS OF EQUATIONS           8     SINGLE EQUATIONS           32
+BLOCKS OF VARIABLES           2     SINGLE VARIABLES           31  6 projected
+NON ZERO ELEMENTS            79
+
+
+GENERATION TIME      =        0.015 SECONDS      4 MB  32.2.0 rc62c018 WEX-WEI
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/24/20 12:45:52 Page 25
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE Benefit Using LP From line 154
+
+
+               S O L V E      S U M M A R Y
+
+     MODEL   Benefit             OBJECTIVE  Max_Z
+     TYPE    LP                  DIRECTION  MAXIMIZE
+     SOLVER  CPLEX               FROM LINE  154
+
+**** SOLVER STATUS     1 Normal Completion         
+**** MODEL STATUS      1 Optimal                   
+**** OBJECTIVE VALUE               51.6000
+
+ RESOURCE USAGE, LIMIT          0.062 10000000000.000
+ ITERATION COUNT, LIMIT        20    2147483647
+
+IBM ILOG CPLEX   32.2.0 rc62c018 Released Aug 26, 2020 WEI x86 64bit/MS Window
+--- GAMS/Cplex Link licensed for continuous and discrete problems.
+Cplex 12.10.0.0
+
+Space for names approximately 0.00 Mb
+Use option 'names no' to turn use of names off
+LP status(1): optimal
+Cplex Time: 0.06sec (det. 0.10 ticks)
+Optimal solution found.
+Objective :          51.600000
+
+
+                       LOWER     LEVEL     UPPER    MARGINAL
+
+---- EQU Max_benef~      .         .         .        1.000      
+
+  Max_benefit  Objective function i.e. to maximize the benefit ($)
+
+---- EQU Reservior_capacity  Reservior capacity constraint (volume)
+
+      LOWER     LEVEL     UPPER    MARGINAL
+
+M1     -INF      6.000     9.000      .         
+M2     -INF      7.000     9.000      .         
+M3     -INF      8.000     9.000      .         
+M4     -INF      8.000     9.000      .         
+M5     -INF      7.000     9.000      .         
+M6     -INF      5.000     9.000      .         
+
+---- EQU PointA_Constraint  Minimum flow constraint at point A (volume per time)
+
+      LOWER     LEVEL     UPPER    MARGINAL
+
+M1     1.000     1.000     +INF     -2.100      
+M2     1.000     1.000     +INF     -2.000      
+M3     1.000     1.000     +INF     -1.900      
+M4     1.000     1.000     +INF     -2.000      
+M5     1.000     1.000     +INF     -2.200      
+M6     1.000     1.000     +INF     -2.200      
+
+                       LOWER     LEVEL     UPPER    MARGINAL
+
+---- EQU EndStorag~     5.000     5.000     +INF     -3.700      
+
+  EndStorage_Constraint  Ending storage in reservior constraint (volume)
+
+---- EQU Turbine_capacity  Maximum volume turbine can pass per time T (Volume pe
+                           r time)
+
+      LOWER     LEVEL     UPPER    MARGINAL
+
+M1     -INF      1.000     4.000      .         
+M2     -INF      1.000     4.000      .         
+M3     -INF      2.000     4.000      .         
+M4     -INF      4.000     4.000     0.200      
+M5     -INF      4.000     4.000     0.500      
+M6     -INF      4.000     4.000     0.500      
+
+---- EQU Massbalance_pointB  Max balance at point B at any time T
+
+      LOWER     LEVEL     UPPER    MARGINAL
+
+M1      .         .         .       -2.100      
+M2      .         .         .       -2.000      
+M3      .         .         .       -1.900      
+M4      .         .         .       -2.000      
+M5      .         .         .       -2.200      
+M6      .         .         .       -2.200      
+
+---- EQU Reservior_Massbalance  Reservior Mass balance (Volume)
+
+      LOWER     LEVEL     UPPER    MARGINAL
+
+M2     2.000     2.000     2.000     3.700      
+M3     3.000     3.000     3.000     3.700      
+M4     4.000     4.000     4.000     3.700      
+M5     3.000     3.000     3.000     3.700      
+M6     2.000     2.000     2.000     3.700      
+
+---- EQU Initial_Reservior  Reservior Mass balance at first timestep (Volume)
+
+      LOWER     LEVEL     UPPER    MARGINAL
+
+M1     7.000     7.000     7.000     3.700      
+
+---- VAR X  Water volume at location Loc at time T  (volume units)
+
+                 LOWER     LEVEL     UPPER    MARGINAL
+
+Reservior .M1      .        6.000     +INF       .         
+Reservior .M2      .        7.000     +INF       .         
+Reservior .M3      .        8.000     +INF       .         
+Reservior .M4      .        8.000     +INF       .         
+Reservior .M5      .        7.000     +INF       .         
+Reservior .M6      .        5.000     +INF       .         
+Spill     .M1      .         .        +INF     -1.600      
+Spill     .M2      .         .        +INF     -1.700      
+Spill     .M3      .         .        +INF     -1.800      
+Spill     .M4      .         .        +INF     -1.700      
+Spill     .M5      .         .        +INF     -1.500      
+Spill     .M6      .         .        +INF     -1.500      
+Turbine   .M1      .        1.000     +INF       .         
+Turbine   .M2      .        1.000     +INF       .         
+Turbine   .M3      .        2.000     +INF       .         
+Turbine   .M4      .        4.000     +INF       .         
+Turbine   .M5      .        4.000     +INF       .         
+Turbine   .M6      .        4.000     +INF       .         
+Flow_at_A .M1      .        1.000     +INF       .         
+Flow_at_A .M2      .        1.000     +INF       .         
+Flow_at_A .M3      .        1.000     +INF       .         
+Flow_at_A .M4      .        1.000     +INF       .         
+Flow_at_A .M5      .        1.000     +INF       .         
+Flow_at_A .M6      .        1.000     +INF       .         
+Irrigation.M1      .         .        +INF     -1.100      
+Irrigation.M2      .         .        +INF     -0.800      
+Irrigation.M3      .        1.000     +INF       .         
+Irrigation.M4      .        3.000     +INF       .         
+Irrigation.M5      .        3.000     +INF       .         
+Irrigation.M6      .        3.000     +INF       .         
+
+                       LOWER     LEVEL     UPPER    MARGINAL
+
+---- VAR Max_Z          -INF     51.600     +INF       .         
+
+  Max_Z  Objective Function value
+
+
+**** REPORT SUMMARY :        0     NONOPT
+                             0 INFEASIBLE
+                             0  UNBOUNDED
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/24/20 12:45:52 Page 26
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Equation Listing    SOLVE PointA Using LP From line 156
+
+
+---- Max_benefit  =E=  Objective function i.e. to maximize the benefit ($)
+
+Max_benefit..  - 1.6*X(Turbine,M1) - 1.7*X(Turbine,M2) - 1.8*X(Turbine,M3)
+     
+      - 1.9*X(Turbine,M4) - 2*X(Turbine,M5) - 2*X(Turbine,M6) - X(Irrigation,M1)
+     
+      - 1.2*X(Irrigation,M2) - 1.9*X(Irrigation,M3) - 2*X(Irrigation,M4)
+     
+      - 2.2*X(Irrigation,M5) - 2.2*X(Irrigation,M6) + Max_Z =E= 0 ; (LHS = 0)
+     
+
+---- Reservior_capacity  =L=  Reservior capacity constraint (volume)
+
+Reservior_capacity(M1)..  X(Reservior,M1) =L= 9 ; (LHS = 6)
+     
+Reservior_capacity(M2)..  X(Reservior,M2) =L= 9 ; (LHS = 7)
+     
+Reservior_capacity(M3)..  X(Reservior,M3) =L= 9 ; (LHS = 8)
+     
+REMAINING 3 ENTRIES SKIPPED
+
+
+---- NewPointA_Constraint  =G=  Minimum flow constraint at point A (volume per t
+                                ime)
+
+NewPointA_Constraint(M1)..  X(Flow_at_A,M1) =G= 2 ; (LHS = 1, INFES = 1 ****)
+     
+NewPointA_Constraint(M2)..  X(Flow_at_A,M2) =G= 2 ; (LHS = 1, INFES = 1 ****)
+     
+NewPointA_Constraint(M3)..  X(Flow_at_A,M3) =G= 2 ; (LHS = 1, INFES = 1 ****)
+     
+REMAINING 3 ENTRIES SKIPPED
+
+
+---- EndStorage_Constraint  =G=  Ending storage in reservior constraint (volume)
+
+EndStorage_Constraint..  X(Reservior,M6) =G= 5 ; (LHS = 5)
+     
+
+---- Turbine_capacity  =L=  Maximum volume turbine can pass per time T (Volume p
+                            er time)
+
+Turbine_capacity(M1)..  X(Turbine,M1) =L= 4 ; (LHS = 1)
+     
+Turbine_capacity(M2)..  X(Turbine,M2) =L= 4 ; (LHS = 1)
+     
+Turbine_capacity(M3)..  X(Turbine,M3) =L= 4 ; (LHS = 2)
+     
+REMAINING 3 ENTRIES SKIPPED
+
+
+---- Massbalance_pointB  =E=  Max balance at point B at any time T
+
+Massbalance_pointB(M1)..  X(Spill,M1) + X(Turbine,M1) - X(Flow_at_A,M1)
+     
+      - X(Irrigation,M1) =E= 0 ; (LHS = 0)
+     
+Massbalance_pointB(M2)..  X(Spill,M2) + X(Turbine,M2) - X(Flow_at_A,M2)
+     
+      - X(Irrigation,M2) =E= 0 ; (LHS = 0)
+     
+Massbalance_pointB(M3)..  X(Spill,M3) + X(Turbine,M3) - X(Flow_at_A,M3)
+     
+      - X(Irrigation,M3) =E= 0 ; (LHS = 0)
+     
+REMAINING 3 ENTRIES SKIPPED
+
+
+---- Reservior_Massbalance  =E=  Reservior Mass balance (Volume)
+
+Reservior_Massbalance(M2)..  - X(Reservior,M1) + X(Reservior,M2) + X(Spill,M2)
+     
+      + X(Turbine,M2) =E= 2 ; (LHS = 2)
+     
+Reservior_Massbalance(M3)..  - X(Reservior,M2) + X(Reservior,M3) + X(Spill,M3)
+     
+      + X(Turbine,M3) =E= 3 ; (LHS = 3)
+     
+Reservior_Massbalance(M4)..  - X(Reservior,M3) + X(Reservior,M4) + X(Spill,M4)
+     
+      + X(Turbine,M4) =E= 4 ; (LHS = 4)
+     
+REMAINING 2 ENTRIES SKIPPED
+
+
+---- Initial_Reservior  =E=  Reservior Mass balance at first timestep (Volume)
+
+Initial_Reservior(M1)..  X(Reservior,M1) + X(Spill,M1) + X(Turbine,M1) =E= 7 ;
+     
+      (LHS = 7)
+     
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/24/20 12:45:52 Page 27
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Column Listing      SOLVE PointA Using LP From line 156
+
+
+---- X  Water volume at location Loc at time T  (volume units)
+
+X(Reservior,M1)
+                (.LO, .L, .UP, .M = 0, 6, +INF, 0)
+        1       Reservior_capacity(M1)
+       -1       Reservior_Massbalance(M2)
+        1       Initial_Reservior(M1)
+
+X(Reservior,M2)
+                (.LO, .L, .UP, .M = 0, 7, +INF, 0)
+        1       Reservior_capacity(M2)
+        1       Reservior_Massbalance(M2)
+       -1       Reservior_Massbalance(M3)
+
+X(Reservior,M3)
+                (.LO, .L, .UP, .M = 0, 8, +INF, 0)
+        1       Reservior_capacity(M3)
+        1       Reservior_Massbalance(M3)
+       -1       Reservior_Massbalance(M4)
+
+REMAINING 27 ENTRIES SKIPPED
+
+---- Max_Z  Objective Function value
+
+Max_Z
+                (.LO, .L, .UP, .M = -INF, 51.6, +INF, 0)
+        1       Max_benefit
+
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/24/20 12:45:52 Page 28
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Model Statistics    SOLVE PointA Using LP From line 156
+
+
+MODEL STATISTICS
+
+BLOCKS OF EQUATIONS           8     SINGLE EQUATIONS           32
+BLOCKS OF VARIABLES           2     SINGLE VARIABLES           31
+NON ZERO ELEMENTS            79
+
+
+GENERATION TIME      =        0.015 SECONDS      4 MB  32.2.0 rc62c018 WEX-WEI
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/24/20 12:45:52 Page 29
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE PointA Using LP From line 156
+
+
+               S O L V E      S U M M A R Y
+
+     MODEL   PointA              OBJECTIVE  Max_Z
+     TYPE    LP                  DIRECTION  MAXIMIZE
+     SOLVER  CPLEX               FROM LINE  156
+
+**** SOLVER STATUS     1 Normal Completion         
+**** MODEL STATUS      1 Optimal                   
+**** OBJECTIVE VALUE               38.8000
+
+ RESOURCE USAGE, LIMIT          0.062 10000000000.000
+ ITERATION COUNT, LIMIT        26    2147483647
+
+IBM ILOG CPLEX   32.2.0 rc62c018 Released Aug 26, 2020 WEI x86 64bit/MS Window
+--- GAMS/Cplex Link licensed for continuous and discrete problems.
+Cplex 12.10.0.0
+
+Space for names approximately 0.00 Mb
+Use option 'names no' to turn use of names off
+LP status(1): optimal
+Cplex Time: 0.06sec (det. 0.10 ticks)
+Optimal solution found.
+Objective :          38.800000
+
+
+                       LOWER     LEVEL     UPPER    MARGINAL
+
+---- EQU Max_benef~      .         .         .        1.000      
+
+  Max_benefit  Objective function i.e. to maximize the benefit ($)
+
+---- EQU Reservior_capacity  Reservior capacity constraint (volume)
+
+      LOWER     LEVEL     UPPER    MARGINAL
+
+M1     -INF      5.000     9.000      .         
+M2     -INF      5.000     9.000      .         
+M3     -INF      6.000     9.000      .         
+M4     -INF      8.000     9.000      .         
+M5     -INF      7.000     9.000      .         
+M6     -INF      5.000     9.000      .         
+
+---- EQU NewPointA_Constraint  Minimum flow constraint at point A (volume per ti
+                               me)
+
+      LOWER     LEVEL     UPPER    MARGINAL
+
+M1     2.000     2.000     +INF     -2.300      
+M2     2.000     2.000     +INF     -2.200      
+M3     2.000     2.000     +INF     -2.100      
+M4     2.000     2.000     +INF     -2.000      
+M5     2.000     2.000     +INF     -2.200      
+M6     2.000     2.000     +INF     -2.200      
+
+                       LOWER     LEVEL     UPPER    MARGINAL
+
+---- EQU EndStorag~     5.000     5.000     +INF     -3.900      
+
+  EndStorage_Constraint  Ending storage in reservior constraint (volume)
+
+---- EQU Turbine_capacity  Maximum volume turbine can pass per time T (Volume pe
+                           r time)
+
+      LOWER     LEVEL     UPPER    MARGINAL
+
+M1     -INF      2.000     4.000      .         
+M2     -INF      2.000     4.000      .         
+M3     -INF      2.000     4.000      .         
+M4     -INF      2.000     4.000      .         
+M5     -INF      4.000     4.000     0.300      
+M6     -INF      4.000     4.000     0.300      
+
+---- EQU Massbalance_pointB  Max balance at point B at any time T
+
+      LOWER     LEVEL     UPPER    MARGINAL
+
+M1      .         .         .       -2.300      
+M2      .         .         .       -2.200      
+M3      .         .         .       -2.100      
+M4      .         .         .       -2.000      
+M5      .         .         .       -2.200      
+M6      .         .         .       -2.200      
+
+---- EQU Reservior_Massbalance  Reservior Mass balance (Volume)
+
+      LOWER     LEVEL     UPPER    MARGINAL
+
+M2     2.000     2.000     2.000     3.900      
+M3     3.000     3.000     3.000     3.900      
+M4     4.000     4.000     4.000     3.900      
+M5     3.000     3.000     3.000     3.900      
+M6     2.000     2.000     2.000     3.900      
+
+---- EQU Initial_Reservior  Reservior Mass balance at first timestep (Volume)
+
+      LOWER     LEVEL     UPPER    MARGINAL
+
+M1     7.000     7.000     7.000     3.900      
+
+---- VAR X  Water volume at location Loc at time T  (volume units)
+
+                 LOWER     LEVEL     UPPER    MARGINAL
+
+Reservior .M1      .        5.000     +INF       .         
+Reservior .M2      .        5.000     +INF       .         
+Reservior .M3      .        6.000     +INF       .         
+Reservior .M4      .        8.000     +INF       .         
+Reservior .M5      .        7.000     +INF       .         
+Reservior .M6      .        5.000     +INF       .         
+Spill     .M1      .         .        +INF     -1.600      
+Spill     .M2      .         .        +INF     -1.700      
+Spill     .M3      .         .        +INF     -1.800      
+Spill     .M4      .         .        +INF     -1.900      
+Spill     .M5      .         .        +INF     -1.700      
+Spill     .M6      .         .        +INF     -1.700      
+Turbine   .M1      .        2.000     +INF       .         
+Turbine   .M2      .        2.000     +INF       .         
+Turbine   .M3      .        2.000     +INF       .         
+Turbine   .M4      .        2.000     +INF       .         
+Turbine   .M5      .        4.000     +INF       .         
+Turbine   .M6      .        4.000     +INF       .         
+Flow_at_A .M1      .        2.000     +INF       .         
+Flow_at_A .M2      .        2.000     +INF       .         
+Flow_at_A .M3      .        2.000     +INF       .         
+Flow_at_A .M4      .        2.000     +INF       .         
+Flow_at_A .M5      .        2.000     +INF       .         
+Flow_at_A .M6      .        2.000     +INF       .         
+Irrigation.M1      .         .        +INF     -1.300      
+Irrigation.M2      .         .        +INF     -1.000      
+Irrigation.M3      .         .        +INF     -0.200      
+Irrigation.M4      .         .        +INF       .         
+Irrigation.M5      .        2.000     +INF       .         
+Irrigation.M6      .        2.000     +INF       .         
+
+                       LOWER     LEVEL     UPPER    MARGINAL
+
+---- VAR Max_Z          -INF     38.800     +INF       .         
+
+  Max_Z  Objective Function value
+
+
+**** REPORT SUMMARY :        0     NONOPT
+                             0 INFEASIBLE
+                             0  UNBOUNDED
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/24/20 12:45:52 Page 30
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Equation Listing    SOLVE AddedInflows Using LP From line 157
+
+
+---- Max_benefit  =E=  Objective function i.e. to maximize the benefit ($)
+
+Max_benefit..  - 1.6*X(Turbine,M1) - 1.7*X(Turbine,M2) - 1.8*X(Turbine,M3)
+     
+      - 1.9*X(Turbine,M4) - 2*X(Turbine,M5) - 2*X(Turbine,M6) - X(Irrigation,M1)
+     
+      - 1.2*X(Irrigation,M2) - 1.9*X(Irrigation,M3) - 2*X(Irrigation,M4)
+     
+      - 2.2*X(Irrigation,M5) - 2.2*X(Irrigation,M6) + Max_Z =E= 0 ; (LHS = 0)
+     
+
+---- Reservior_capacity  =L=  Reservior capacity constraint (volume)
+
+Reservior_capacity(M1)..  X(Reservior,M1) =L= 9 ; (LHS = 5)
+     
+Reservior_capacity(M2)..  X(Reservior,M2) =L= 9 ; (LHS = 5)
+     
+Reservior_capacity(M3)..  X(Reservior,M3) =L= 9 ; (LHS = 6)
+     
+REMAINING 3 ENTRIES SKIPPED
+
+
+---- PointA_Constraint  =G=  Minimum flow constraint at point A (volume per time
+                             )
+
+PointA_Constraint(M1)..  X(Flow_at_A,M1) =G= 1 ; (LHS = 2)
+     
+PointA_Constraint(M2)..  X(Flow_at_A,M2) =G= 1 ; (LHS = 2)
+     
+PointA_Constraint(M3)..  X(Flow_at_A,M3) =G= 1 ; (LHS = 2)
+     
+REMAINING 3 ENTRIES SKIPPED
+
+
+---- EndStorage_Constraint  =G=  Ending storage in reservior constraint (volume)
+
+EndStorage_Constraint..  X(Reservior,M6) =G= 5 ; (LHS = 5)
+     
+
+---- Turbine_capacity  =L=  Maximum volume turbine can pass per time T (Volume p
+                            er time)
+
+Turbine_capacity(M1)..  X(Turbine,M1) =L= 4 ; (LHS = 2)
+     
+Turbine_capacity(M2)..  X(Turbine,M2) =L= 4 ; (LHS = 2)
+     
+Turbine_capacity(M3)..  X(Turbine,M3) =L= 4 ; (LHS = 2)
+     
+REMAINING 3 ENTRIES SKIPPED
+
+
+---- Massbalance_pointB  =E=  Max balance at point B at any time T
+
+Massbalance_pointB(M1)..  X(Spill,M1) + X(Turbine,M1) - X(Flow_at_A,M1)
+     
+      - X(Irrigation,M1) =E= 0 ; (LHS = 0)
+     
+Massbalance_pointB(M2)..  X(Spill,M2) + X(Turbine,M2) - X(Flow_at_A,M2)
+     
+      - X(Irrigation,M2) =E= 0 ; (LHS = 0)
+     
+Massbalance_pointB(M3)..  X(Spill,M3) + X(Turbine,M3) - X(Flow_at_A,M3)
+     
+      - X(Irrigation,M3) =E= 0 ; (LHS = 0)
+     
+REMAINING 3 ENTRIES SKIPPED
+
+
+---- NewReservior_Massbalance  =E=  Reservior Mass balance (Volume)
+
+NewReservior_Massbalance(M2)..  - X(Reservior,M1) + X(Reservior,M2)
+     
+      + X(Spill,M2) + X(Turbine,M2) =E= 3 ; (LHS = 2, INFES = 1 ****)
+     
+NewReservior_Massbalance(M3)..  - X(Reservior,M2) + X(Reservior,M3)
+     
+      + X(Spill,M3) + X(Turbine,M3) =E= 4 ; (LHS = 3, INFES = 1 ****)
+     
+NewReservior_Massbalance(M4)..  - X(Reservior,M3) + X(Reservior,M4)
+     
+      + X(Spill,M4) + X(Turbine,M4) =E= 4 ; (LHS = 4)
+     
+REMAINING 2 ENTRIES SKIPPED
+
+
+---- NewInitial_Reservior  =E=  Reservior Mass balance at first timestep (Volume
+                                )
+
+NewInitial_Reservior(M1)..  X(Reservior,M1) + X(Spill,M1) + X(Turbine,M1) =E= 8
+      ; (LHS = 7, INFES = 1 ****)
+     
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/24/20 12:45:52 Page 31
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Column Listing      SOLVE AddedInflows Using LP From line 157
+
+
+---- X  Water volume at location Loc at time T  (volume units)
+
+X(Reservior,M1)
+                (.LO, .L, .UP, .M = 0, 5, +INF, 0)
+        1       Reservior_capacity(M1)
+       -1       NewReservior_Massbalance(M2)
+        1       NewInitial_Reservior(M1)
+
+X(Reservior,M2)
+                (.LO, .L, .UP, .M = 0, 5, +INF, 0)
+        1       Reservior_capacity(M2)
+        1       NewReservior_Massbalance(M2)
+       -1       NewReservior_Massbalance(M3)
+
+X(Reservior,M3)
+                (.LO, .L, .UP, .M = 0, 6, +INF, 0)
+        1       Reservior_capacity(M3)
+        1       NewReservior_Massbalance(M3)
+       -1       NewReservior_Massbalance(M4)
+
+REMAINING 27 ENTRIES SKIPPED
+
+---- Max_Z  Objective Function value
+
+Max_Z
+                (.LO, .L, .UP, .M = -INF, 38.8, +INF, 0)
+        1       Max_benefit
+
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/24/20 12:45:52 Page 32
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Model Statistics    SOLVE AddedInflows Using LP From line 157
+
+
+MODEL STATISTICS
+
+BLOCKS OF EQUATIONS           8     SINGLE EQUATIONS           32
+BLOCKS OF VARIABLES           2     SINGLE VARIABLES           31
+NON ZERO ELEMENTS            79
+
+
+GENERATION TIME      =        0.016 SECONDS      4 MB  32.2.0 rc62c018 WEX-WEI
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/24/20 12:45:52 Page 33
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE AddedInflows Using LP From line 157
+
+
+               S O L V E      S U M M A R Y
+
+     MODEL   AddedInflows        OBJECTIVE  Max_Z
+     TYPE    LP                  DIRECTION  MAXIMIZE
+     SOLVER  CPLEX               FROM LINE  157
+
+**** SOLVER STATUS     1 Normal Completion         
+**** MODEL STATUS      1 Optimal                   
+**** OBJECTIVE VALUE               61.9000
+
+ RESOURCE USAGE, LIMIT          0.016 10000000000.000
+ ITERATION COUNT, LIMIT        21    2147483647
+
+IBM ILOG CPLEX   32.2.0 rc62c018 Released Aug 26, 2020 WEI x86 64bit/MS Window
+--- GAMS/Cplex Link licensed for continuous and discrete problems.
+Cplex 12.10.0.0
+
+Space for names approximately 0.00 Mb
+Use option 'names no' to turn use of names off
+LP status(1): optimal
+Cplex Time: 0.02sec (det. 0.10 ticks)
+Optimal solution found.
+Objective :          61.900000
+
+
+                       LOWER     LEVEL     UPPER    MARGINAL
+
+---- EQU Max_benef~      .         .         .        1.000      
+
+  Max_benefit  Objective function i.e. to maximize the benefit ($)
+
+---- EQU Reservior_capacity  Reservior capacity constraint (volume)
+
+      LOWER     LEVEL     UPPER    MARGINAL
+
+M1     -INF      7.000     9.000      .         
+M2     -INF      8.000     9.000      .         
+M3     -INF      8.000     9.000      .         
+M4     -INF      8.000     9.000      .         
+M5     -INF      7.000     9.000      .         
+M6     -INF      5.000     9.000      .         
+
+---- EQU PointA_Constraint  Minimum flow constraint at point A (volume per time)
+
+      LOWER     LEVEL     UPPER    MARGINAL
+
+M1     1.000     1.000     +INF     -1.300      
+M2     1.000     1.000     +INF     -1.200      
+M3     1.000     1.000     +INF     -1.900      
+M4     1.000     1.000     +INF     -2.000      
+M5     1.000     1.000     +INF     -2.200      
+M6     1.000     1.000     +INF     -2.200      
+
+                       LOWER     LEVEL     UPPER    MARGINAL
+
+---- EQU EndStorag~     5.000     5.000     +INF     -2.900      
+
+  EndStorage_Constraint  Ending storage in reservior constraint (volume)
+
+---- EQU Turbine_capacity  Maximum volume turbine can pass per time T (Volume pe
+                           r time)
+
+      LOWER     LEVEL     UPPER    MARGINAL
+
+M1     -INF      1.000     4.000      .         
+M2     -INF      2.000     4.000      .         
+M3     -INF      4.000     4.000     0.800      
+M4     -INF      4.000     4.000     1.000      
+M5     -INF      4.000     4.000     1.300      
+M6     -INF      4.000     4.000     1.300      
+
+---- EQU Massbalance_pointB  Max balance at point B at any time T
+
+      LOWER     LEVEL     UPPER    MARGINAL
+
+M1      .         .         .       -1.300      
+M2      .         .         .       -1.200      
+M3      .         .         .       -1.900      
+M4      .         .         .       -2.000      
+M5      .         .         .       -2.200      
+M6      .         .         .       -2.200      
+
+---- EQU NewReservior_Massbalance  Reservior Mass balance (Volume)
+
+      LOWER     LEVEL     UPPER    MARGINAL
+
+M2     3.000     3.000     3.000     2.900      
+M3     4.000     4.000     4.000     2.900      
+M4     4.000     4.000     4.000     2.900      
+M5     3.000     3.000     3.000     2.900      
+M6     2.000     2.000     2.000     2.900      
+
+---- EQU NewInitial_Reservior  Reservior Mass balance at first timestep (Volume)
+
+      LOWER     LEVEL     UPPER    MARGINAL
+
+M1     8.000     8.000     8.000     2.900      
+
+---- VAR X  Water volume at location Loc at time T  (volume units)
+
+                 LOWER     LEVEL     UPPER    MARGINAL
+
+Reservior .M1      .        7.000     +INF       .         
+Reservior .M2      .        8.000     +INF       .         
+Reservior .M3      .        8.000     +INF       .         
+Reservior .M4      .        8.000     +INF       .         
+Reservior .M5      .        7.000     +INF       .         
+Reservior .M6      .        5.000     +INF       .         
+Spill     .M1      .         .        +INF     -1.600      
+Spill     .M2      .         .        +INF     -1.700      
+Spill     .M3      .         .        +INF     -1.000      
+Spill     .M4      .         .        +INF     -0.900      
+Spill     .M5      .         .        +INF     -0.700      
+Spill     .M6      .         .        +INF     -0.700      
+Turbine   .M1      .        1.000     +INF       .         
+Turbine   .M2      .        2.000     +INF       .         
+Turbine   .M3      .        4.000     +INF       .         
+Turbine   .M4      .        4.000     +INF       .         
+Turbine   .M5      .        4.000     +INF       .         
+Turbine   .M6      .        4.000     +INF       .         
+Flow_at_A .M1      .        1.000     +INF       .         
+Flow_at_A .M2      .        1.000     +INF       .         
+Flow_at_A .M3      .        1.000     +INF       .         
+Flow_at_A .M4      .        1.000     +INF       .         
+Flow_at_A .M5      .        1.000     +INF       .         
+Flow_at_A .M6      .        1.000     +INF       .         
+Irrigation.M1      .         .        +INF     -0.300      
+Irrigation.M2      .        1.000     +INF       .         
+Irrigation.M3      .        3.000     +INF       .         
+Irrigation.M4      .        3.000     +INF       .         
+Irrigation.M5      .        3.000     +INF       .         
+Irrigation.M6      .        3.000     +INF       .         
+
+                       LOWER     LEVEL     UPPER    MARGINAL
+
+---- VAR Max_Z          -INF     61.900     +INF       .         
+
+  Max_Z  Objective Function value
+
+
+**** REPORT SUMMARY :        0     NONOPT
+                             0 INFEASIBLE
+                             0  UNBOUNDED
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/24/20 12:45:52 Page 34
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+E x e c u t i o n
+
+
+EXECUTION TIME       =        2.547 SECONDS      4 MB  32.2.0 rc62c018 WEX-WEI
+
+
+USER: Small MUD - 5 User License                     G200622/0001AP-GEN
+      Utah State University, Utah Water Research Laboratory      DC7087
+      License for teaching and research at degree granting institutions
+
+
+**** FILE SUMMARY
+
+Input      E:\Systems analysis class\Gams\Reservior Problem.gms
+Output     E:\Systems analysis class\Gams\Reservior Problem.lst
