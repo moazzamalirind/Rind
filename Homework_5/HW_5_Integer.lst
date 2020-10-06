@@ -1,0 +1,443 @@
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 10/05/20 14:38:53 Page 1
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+C o m p i l a t i o n
+
+
+      CEE 6410 - Water Resources Systems Analysis
+      Example 7.1 from Bishop Et Al Text (https://digitalcommons.usu.edu/ecstati
+      c_all/76/)
+       
+      THE PROBLEM:
+       
+      A farmer plans to develop water for irrigation. He is considering two poss
+      ible sources of water:
+      a gravity diversion from a possible reservoir with two alternative capacit
+      ies and/or a pump from
+      a lower river diversion . Between the reservoir and pump site the river ba
+      se flow increases by 2 acft/day
+      due to groundwater drainage into the river. Ignore losses from the reservo
+      ir. The river flow into the reservoir
+      and the farmer's demand during each of two six-month seasons of the year a
+      re given in Table 7.5.
+      Revenue is estimated at $300 per year per acre irrigated.
+       
+      Table 7.5: Seasonal Flow and Demand
+      Season,           t River Inflow,Qt (acft)      Irrigation Demand (acft/ac
+      re)
+      1                     600                                   1.0
+      2                     200                                   3.0
+      Assume that there are only two possible sizes of reservoir: a high dam tha
+      t has capacity of 700 acft
+      or a low dam with capacity of 300 acft. The capital costs are $10,000/year
+       and $6,000/year for the high
+      and low dams, respectively (no operating cost). The pump capacity is fixed
+       at 2.2 acft/day with a capital cost
+      (if it is built) of $8,000/year and operating cost of $20/acft.
+       
+       
+      Moazzam Ali Rind
+      moazzamalirind@gmail.com
+      October 4, 2020
+  28   
+  29   
+  30  * 1. Define the sets
+  31  Sets
+  32  Loc          Location / res "at Reservior", pump " at pump", river "Reserv
+      ior release to the River", farm "Reservior release to the farm"/
+  33  Time         Time in seasons /season1, season2/
+  34  *The given problem divides the whole year in two seasons of six months eac
+      h
+  35  size         Size of reservior /size0, size1,size2/;
+  36   
+  37  * 2. Define the input data
+  38  Parameters
+  39   
+  40  Res_capacity(size)       Capacity of the reservior constructed (acft) / si
+      ze0 0, size1 300, size2 700/
+  41  Res_capCost(size)        Capital cost of reservior construction ($ per yea
+      r) / size0 0, size1 6000, size2 10000/
+  42  Inflow(Time)             Inflows to the system during the simulation perio
+      d (acft) /Season1 600, Season2 200/
+  43  Demand(Time)             Seasonal Irrigation demands (acft per acre) /Seas
+      on1 1, Season2 3/ ;
+  44   
+  45  Scalars
+  46  Pump_Capacity            Maximum pump capacity (acft per season) /401.5/
+  47  * Given is pump capacity in acft/day. Which means for the 6 months seaason
+       will be : (2.2* 365)/2 = 401.5 acft per season
+  48  Pump_capCost             Capital cost for building the pump ($ per year) /
+      8000/
+  49  Pump_optCost             operational cost of the pump ($ per acreft) /20/
+  50  Groundwater              Amount of ground water inflows (acft per season) 
+      /365/
+  51  Irri_Revenue             Revenue earn per year per acre irrigated/300/
+  52  ;
+  53   
+  54   
+  55  * 3. Define the Variables
+  56  variables
+  57   
+  58  X(Loc,Time)             Flows at a given location (Loc) on a given time (T
+      ime) (acft)
+  59  R(Loc,size)             Binary decision to build  reservior of a size (Siz
+      e) (1=yes 0=no)
+  60  P(Loc)                  Binary decision to build  Pump (1=yes 0=no)
+  61  Area                    Area irrigated (acres)
+  62  Benefit                Total benefits($);
+  63   
+  64  *Non Negativity constraint
+  65  Binary variables R,P;
+  66  Positive variables X;
+  67   
+  68  * 4.Define the equations
+  69   
+  70  Equations
+  71  Total_Benefits                Objective function to calculate the total be
+      nefits ($)
+  72  Pump_Cap(Time)                Maximum Pump capacity constaint at all times
+      teps  (acft)
+  73  Dam_Build                     Constraint to make sure that only build one 
+      reservior at a time
+  74  ResStorage(Time)              Constriant to keep resevior storage less tha
+      n or equal to built capacity at all times (acft)
+  75  MassBlc_stream(Time)          Mass balance at stream loaction (acft)
+  76  MassBlc_iniRes                Inital timestep Reservior mass balance (acft
+      )
+  77  MassBlc_Res(Time)             Reservior mass balance in all t>1 timesteps 
+      (acft)
+  78  Area_Irr(Time)                Area irrigated (acres);
+  79   
+  80   
+  81   
+  82  Total_Benefits ..               Benefit =e= (Irri_Revenue*Area)- sum(size,
+       Res_capCost(size)*R('res',size))- Pump_capCost*P('pump') - sum(Time,Pump_
+      optCost* X('pump',Time));
+  83  Pump_Cap(Time)..                X('pump',Time)=l= Pump_Capacity* P('pump')
+      ;
+  84  Dam_Build..                     1 =e=  sum (size, R('res',size));
+  85  ResStorage(Time)..              X('res',Time)=l= sum (size, Res_capacity(s
+      ize)*R('res',size));
+  86  MassBlc_stream(Time)..          X('pump',Time)=l= X('river',Time)+ Groundw
+      ater;
+  87  MassBlc_iniRes..                X('res','season1')=e= Inflow('season1')- X
+      ('river','season1')- X('farm','season1');
+  88  *There is no intial storage available in given model. Hence its igonred in
+       Initial reservior mass balance equation
+  89  MassBlc_Res(Time)$(ord(Time) ge 2)..      X('res',Time)=e= Inflow(Time)+ X
+      ('res',Time-1)- X('river',Time)- X('farm',Time);
+  90  Area_Irr(Time)..                       Area=l= (X('farm',Time)+X('pump',Ti
+      me))/Demand(Time) ;
+  91   
+  92  * 5.Define a model for the equations
+  93   
+  94  Model Integer_problem /all/;
+  95   
+  96   
+  97  * 6. Solution statement
+  98  SOLVE Integer_problem USING MIP Maximize Benefit;
+  99   
+
+
+COMPILATION TIME     =        0.000 SECONDS      3 MB  32.2.0 rc62c018 WEX-WEI
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 10/05/20 14:38:53 Page 2
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Equation Listing    SOLVE Integer_problem Using MIP From line 98
+
+
+---- Total_Benefits  =E=  Objective function to calculate the total benefits ($)
+
+Total_Benefits..  20*X(pump,season1) + 20*X(pump,season2) + 6000*R(res,size1)
+     
+      + 10000*R(res,size2) + 8000*P(pump) - 300*Area + Benefit =E= 0 ; (LHS = 0)
+     
+
+---- Pump_Cap  =L=  Maximum Pump capacity constaint at all timesteps  (acft)
+
+Pump_Cap(season1)..  X(pump,season1) - 401.5*P(pump) =L= 0 ; (LHS = 0)
+     
+Pump_Cap(season2)..  X(pump,season2) - 401.5*P(pump) =L= 0 ; (LHS = 0)
+     
+
+---- Dam_Build  =E=  Constraint to make sure that only build one reservior at a 
+                     time
+
+Dam_Build..  - R(res,size0) - R(res,size1) - R(res,size2) =E= -1 ;
+     
+      (LHS = 0, INFES = 1 ****)
+     
+
+---- ResStorage  =L=  Constriant to keep resevior storage less than or equal to 
+                      built capacity at all times (acft)
+
+ResStorage(season1)..  X(res,season1) - 300*R(res,size1) - 700*R(res,size2) =L= 
+     0 ; (LHS = 0)
+     
+ResStorage(season2)..  X(res,season2) - 300*R(res,size1) - 700*R(res,size2) =L= 
+     0 ; (LHS = 0)
+     
+
+---- MassBlc_stream  =L=  Mass balance at stream loaction (acft)
+
+MassBlc_stream(season1)..  X(pump,season1) - X(river,season1) =L= 365 ;
+     
+      (LHS = 0)
+     
+MassBlc_stream(season2)..  X(pump,season2) - X(river,season2) =L= 365 ;
+     
+      (LHS = 0)
+     
+
+---- MassBlc_iniRes  =E=  Inital timestep Reservior mass balance (acft)
+
+MassBlc_iniRes..  X(res,season1) + X(river,season1) + X(farm,season1) =E= 600 ;
+     
+      (LHS = 0, INFES = 600 ****)
+     
+
+---- MassBlc_Res  =E=  Reservior mass balance in all t>1 timesteps (acft)
+
+MassBlc_Res(season2)..  - X(res,season1) + X(res,season2) + X(river,season2)
+     
+      + X(farm,season2) =E= 200 ; (LHS = 0, INFES = 200 ****)
+     
+
+---- Area_Irr  =L=  Area irrigated (acres)
+
+Area_Irr(season1)..  - X(pump,season1) - X(farm,season1) + Area =L= 0 ;
+     
+      (LHS = 0)
+     
+Area_Irr(season2)..  - 0.333333333333333*X(pump,season2)
+     
+      - 0.333333333333333*X(farm,season2) + Area =L= 0 ; (LHS = 0)
+     
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 10/05/20 14:38:53 Page 3
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Column Listing      SOLVE Integer_problem Using MIP From line 98
+
+
+---- X  Flows at a given location (Loc) on a given time (Time) (acft)
+
+X(res,season1)
+                (.LO, .L, .UP, .M = 0, 0, +INF, 0)
+        1       ResStorage(season1)
+        1       MassBlc_iniRes
+       -1       MassBlc_Res(season2)
+
+X(res,season2)
+                (.LO, .L, .UP, .M = 0, 0, +INF, 0)
+        1       ResStorage(season2)
+        1       MassBlc_Res(season2)
+
+X(pump,season1)
+                (.LO, .L, .UP, .M = 0, 0, +INF, 0)
+       20       Total_Benefits
+        1       Pump_Cap(season1)
+        1       MassBlc_stream(season1)
+       -1       Area_Irr(season1)
+
+REMAINING 5 ENTRIES SKIPPED
+
+---- R  Binary decision to build  reservior of a size (Size) (1=yes 0=no)
+
+R(res,size0)
+                (.LO, .L, .UP, .M = 0, 0, 1, 0)
+       -1       Dam_Build
+
+R(res,size1)
+                (.LO, .L, .UP, .M = 0, 0, 1, 0)
+     6000       Total_Benefits
+       -1       Dam_Build
+     -300       ResStorage(season1)
+     -300       ResStorage(season2)
+
+R(res,size2)
+                (.LO, .L, .UP, .M = 0, 0, 1, 0)
+    10000       Total_Benefits
+       -1       Dam_Build
+     -700       ResStorage(season1)
+     -700       ResStorage(season2)
+
+
+---- P  Binary decision to build  Pump (1=yes 0=no)
+
+P(pump)
+                (.LO, .L, .UP, .M = 0, 0, 1, 0)
+     8000       Total_Benefits
+     -401.5     Pump_Cap(season1)
+     -401.5     Pump_Cap(season2)
+
+
+---- Area  Area irrigated (acres)
+
+Area
+                (.LO, .L, .UP, .M = -INF, 0, +INF, 0)
+     -300       Total_Benefits
+        1       Area_Irr(season1)
+        1       Area_Irr(season2)
+
+
+---- Benefit  Total benefits($)
+
+Benefit
+                (.LO, .L, .UP, .M = -INF, 0, +INF, 0)
+        1       Total_Benefits
+
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 10/05/20 14:38:53 Page 4
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Model Statistics    SOLVE Integer_problem Using MIP From line 98
+
+
+MODEL STATISTICS
+
+BLOCKS OF EQUATIONS           8     SINGLE EQUATIONS           12
+BLOCKS OF VARIABLES           5     SINGLE VARIABLES           14
+NON ZERO ELEMENTS            37     DISCRETE VARIABLES          4
+
+
+GENERATION TIME      =        0.078 SECONDS      4 MB  32.2.0 rc62c018 WEX-WEI
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 10/05/20 14:38:53 Page 5
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE Integer_problem Using MIP From line 98
+
+
+               S O L V E      S U M M A R Y
+
+     MODEL   Integer_problem     OBJECTIVE  Benefit
+     TYPE    MIP                 DIRECTION  MAXIMIZE
+     SOLVER  CPLEX               FROM LINE  98
+
+**** SOLVER STATUS     1 Normal Completion         
+**** MODEL STATUS      1 Optimal                   
+**** OBJECTIVE VALUE            82150.0000
+
+ RESOURCE USAGE, LIMIT          0.125 10000000000.000
+ ITERATION COUNT, LIMIT        13    2147483647
+
+IBM ILOG CPLEX   32.2.0 rc62c018 Released Aug 26, 2020 WEI x86 64bit/MS Window
+--- GAMS/Cplex Link licensed for continuous and discrete problems.
+Cplex 12.10.0.0
+
+Space for names approximately 0.00 Mb
+Use option 'names no' to turn use of names off
+MIP status(101): integer optimal solution
+Cplex Time: 0.08sec (det. 0.14 ticks)
+Fixing integer variables, and solving final LP...
+Fixed MIP status(1): optimal
+Cplex Time: 0.00sec (det. 0.02 ticks)
+Proven optimal solution.
+
+MIP Solution:        82150.000000    (8 iterations, 0 nodes)
+Final Solve:         82150.000000    (5 iterations)
+
+Best possible:       82150.000000
+Absolute gap:            0.000000
+Relative gap:            0.000000
+
+
+                       LOWER     LEVEL     UPPER    MARGINAL
+
+---- EQU Total_Ben~      .         .         .        1.000      
+
+  Total_Benefits  Objective function to calculate the total benefits ($)
+
+---- EQU Pump_Cap  Maximum Pump capacity constaint at all timesteps  (acft)
+
+           LOWER     LEVEL     UPPER    MARGINAL
+
+season1     -INF    -36.500      .         .         
+season2     -INF    -36.500      .         .         
+
+                       LOWER     LEVEL     UPPER    MARGINAL
+
+---- EQU Dam_Build     -1.000    -1.000    -1.000      .         
+
+  Dam_Build  Constraint to make sure that only build one reservior at a time
+
+---- EQU ResStorage  Constriant to keep resevior storage less than or equal to b
+                     uilt capacity at all times (acft)
+
+           LOWER     LEVEL     UPPER    MARGINAL
+
+season1     -INF   -117.500      .         .         
+season2     -INF   -700.000      .         .         
+
+---- EQU MassBlc_stream  Mass balance at stream loaction (acft)
+
+           LOWER     LEVEL     UPPER    MARGINAL
+
+season1     -INF    365.000   365.000    55.000      
+season2     -INF    365.000   365.000    55.000      
+
+                       LOWER     LEVEL     UPPER    MARGINAL
+
+---- EQU MassBlc_i~   600.000   600.000   600.000    75.000      
+
+  MassBlc_iniRes  Inital timestep Reservior mass balance (acft)
+
+---- EQU MassBlc_Res  Reservior mass balance in all t>1 timesteps (acft)
+
+           LOWER     LEVEL     UPPER    MARGINAL
+
+season2   200.000   200.000   200.000    75.000      
+
+---- EQU Area_Irr  Area irrigated (acres)
+
+           LOWER     LEVEL     UPPER    MARGINAL
+
+season1     -INF       .         .       75.000      
+season2     -INF       .         .      225.000      
+
+---- VAR X  Flows at a given location (Loc) on a given time (Time) (acft)
+
+                 LOWER     LEVEL     UPPER    MARGINAL
+
+res  .season1      .      582.500     +INF       .         
+res  .season2      .         .        +INF    -75.000      
+pump .season1      .      365.000     +INF       .         
+pump .season2      .      365.000     +INF       .         
+river.season1      .         .        +INF    -20.000      
+river.season2      .         .        +INF    -20.000      
+farm .season1      .       17.500     +INF       .         
+farm .season2      .      782.500     +INF       .         
+
+---- VAR R  Binary decision to build  reservior of a size (Size) (1=yes 0=no)
+
+             LOWER     LEVEL     UPPER    MARGINAL
+
+res.size0      .         .        1.000      EPS       
+res.size1      .         .        1.000 -6000.000      
+res.size2      .        1.000     1.000 -1.000E+4      
+
+---- VAR P  Binary decision to build  Pump (1=yes 0=no)
+
+        LOWER     LEVEL     UPPER    MARGINAL
+
+pump      .        1.000     1.000 -8000.000      
+
+                       LOWER     LEVEL     UPPER    MARGINAL
+
+---- VAR Area           -INF    382.500     +INF       .         
+---- VAR Benefit        -INF  82150.000     +INF       .         
+
+  Area  Area irrigated (acres)
+  Benefit  Total benefits($)
+
+
+**** REPORT SUMMARY :        0     NONOPT
+                             0 INFEASIBLE
+                             0  UNBOUNDED
+
+
+EXECUTION TIME       =        0.281 SECONDS      4 MB  32.2.0 rc62c018 WEX-WEI
+
+
+USER: Small MUD - 5 User License                     G200622/0001AP-GEN
+      Utah State University, Utah Water Research Laboratory      DC7087
+      License for teaching and research at degree granting institutions
+
+
+**** FILE SUMMARY
+
+Input      E:\Systems analysis class\Gams\HW_5_Integer.gms
+Output     E:\Systems analysis class\Gams\HW_5_Integer.lst
