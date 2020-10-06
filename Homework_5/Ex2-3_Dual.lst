@@ -1,0 +1,243 @@
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/29/20 17:31:29 Page 1
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+C o m p i l a t i o n
+
+
+       
+      CEE 6410 - Water Resources Systems Analysis
+      Irrigation Development Problem
+       
+      Problem #3 of Chapter 2 from Water Resources System Analysis book by Bisho
+      p et al.,
+       
+      Dual settings
+       
+      Moazzam Rind
+      moazzamalirind@gmail.com
+      September 29, 2020
+  14   
+  15  Sets
+  16  T                       Time in months /June,July,August/
+  17  Y                       Dual variables/Land,June,July,August/
+  18  ;
+  19   
+  20  Parameters
+  21  *Given data
+  22  Hay_Req(T)              Monthly water requirement for Hay crop (acft per a
+      cre)/June 2, July 1,August 1/
+  23  Grain_Req(T)            Monthly water requirement for Grain crop (acft per
+       acre)/June 1, July 2,August 0/
+  24  ;
+  25   
+  26   
+  27  Positive variables
+  28  X(Y)                 Dual variables
+  29  *X(Land) is in acres and other variables are in ac-ft.
+  30  ;
+  31   
+  32  Variable
+  33  Min_Z                   Total benefit from the Irrigation development i.e.
+       objective function value ($);
+  34   
+  35  Scalars
+  36  Avail_land               Total available land (acres) /10000/
+  37  June_Water               Available water in June (acft)/14000/
+  38  July_Water               Available water in July (acft) /18000/
+  39  August_Water             Available water in August (acft) /6000/
+  40  Rate_Hay                 Return from Hay crop ($ per acre) /100/
+  41  Rate_Grain               Return from Grain crop ($ per acre) /120/
+  42  ;
+  43   
+  44  Equations
+  45  Min_benefit              Objective function i.e. to minimize the resources
+       required for irrigation development($)
+  46  Hay_DUAL                 Reduced Cost ($) associated with using resources 
+      for Hay crop
+  47  Grain_DUAL               Reduced Cost ($) associated with using resources 
+      for Grain crop
+  48   
+  49  ;
+  50   
+  51  *Objective function (i.e Maximize Benefits).
+  52   
+  53  Min_benefit..                    Min_Z =e= Avail_land* X("Land") + June_Wa
+      ter *X("June")+ July_Water *X("July")+ August_Water *X("August") ;
+  54   
+  55  *constraints
+  56  Hay_DUAL..                       X("Land")*1 + X("June")*Hay_Req("June")+ 
+      X("July")*Hay_Req("July")+ X("August")*Hay_Req("August")=g= Rate_Hay ;
+  57  Grain_DUAL..                     X("Land")*1 + X("June")*Grain_Req("June")
+      + X("July")*Grain_Req("July")+ X("August")*Grain_Req("August")=g= Rate_Gra
+      in ;
+  58   
+  59   
+  60  *  Defininig a model having all equations
+  61  MODEL Dual /ALL/;
+  62   
+  63  Option LP= conopt;
+  64  *Selection of Solver
+  65   
+  66   
+  67  SOLVE Dual USING LP Minimize Min_Z;
+  68  *Solution Statement
+  69   
+  70   
+
+
+COMPILATION TIME     =        0.000 SECONDS      3 MB  32.2.0 rc62c018 WEX-WEI
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/29/20 17:31:29 Page 2
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Equation Listing    SOLVE Dual Using LP From line 67
+
+
+---- Min_benefit  =E=  Objective function i.e. to minimize the resources require
+                       d for irrigation development($)
+
+Min_benefit..  - 14000*X(June) - 18000*X(July) - 6000*X(August) - 10000*X(Land)
+     
+      + Min_Z =E= 0 ; (LHS = 0)
+     
+
+---- Hay_DUAL  =G=  Reduced Cost ($) associated with using resources for Hay cro
+                    p
+
+Hay_DUAL..  2*X(June) + X(July) + X(August) + X(Land) =G= 100 ;
+     
+      (LHS = 0, INFES = 100 ****)
+     
+
+---- Grain_DUAL  =G=  Reduced Cost ($) associated with using resources for Grain
+                      crop
+
+Grain_DUAL..  X(June) + 2*X(July) + X(Land) =G= 120 ; (LHS = 0
+     , INFES = 120 ****)
+     
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/29/20 17:31:29 Page 3
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Column Listing      SOLVE Dual Using LP From line 67
+
+
+---- X  Dual variables
+
+X(June)
+                (.LO, .L, .UP, .M = 0, 0, +INF, 0)
+   -14000       Min_benefit
+        2       Hay_DUAL
+        1       Grain_DUAL
+
+X(July)
+                (.LO, .L, .UP, .M = 0, 0, +INF, 0)
+   -18000       Min_benefit
+        1       Hay_DUAL
+        2       Grain_DUAL
+
+X(August)
+                (.LO, .L, .UP, .M = 0, 0, +INF, 0)
+    -6000       Min_benefit
+        1       Hay_DUAL
+
+REMAINING ENTRY SKIPPED
+
+---- Min_Z  Total benefit from the Irrigation development i.e. objective functio
+            n value ($)
+
+Min_Z
+                (.LO, .L, .UP, .M = -INF, 0, +INF, 0)
+        1       Min_benefit
+
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/29/20 17:31:29 Page 4
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Model Statistics    SOLVE Dual Using LP From line 67
+
+
+MODEL STATISTICS
+
+BLOCKS OF EQUATIONS           3     SINGLE EQUATIONS            3
+BLOCKS OF VARIABLES           2     SINGLE VARIABLES            5
+NON ZERO ELEMENTS            12
+
+
+GENERATION TIME      =        0.141 SECONDS      4 MB  32.2.0 rc62c018 WEX-WEI
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/29/20 17:31:29 Page 5
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE Dual Using LP From line 67
+
+
+               S O L V E      S U M M A R Y
+
+     MODEL   Dual                OBJECTIVE  Min_Z
+     TYPE    LP                  DIRECTION  MINIMIZE
+     SOLVER  CONOPT              FROM LINE  67
+
+**** SOLVER STATUS     1 Normal Completion         
+**** MODEL STATUS      1 Optimal                   
+**** OBJECTIVE VALUE          1160000.0000
+
+ RESOURCE USAGE, LIMIT          0.032 10000000000.000
+ ITERATION COUNT, LIMIT         4    2147483647
+CONOPT 3         32.2.0 rc62c018 Released Aug 26, 2020 WEI x86 64bit/MS Window
+ 
+ 
+    C O N O P T 3   version 3.17L
+    Copyright (C)   ARKI Consulting and Development A/S
+                    Bagsvaerdvej 246 A
+                    DK-2880 Bagsvaerd, Denmark
+ 
+ 
+                   Pre-triangular equations:   0
+                   Post-triangular equations:  1
+ 
+ 
+ ** Optimal solution. There are no superbasic variables.
+ 
+ 
+ CONOPT time Total                            0.032 seconds
+   of which: Function evaluations             0.000 =  0.0%
+             1st Derivative evaluations       0.000 =  0.0%
+ 
+
+                       LOWER     LEVEL     UPPER    MARGINAL
+
+---- EQU Min_benef~      .         .         .        1.000      
+---- EQU Hay_DUAL     100.000   100.000     +INF   2000.000      
+---- EQU Grain_DUAL   120.000   120.000     +INF   8000.000      
+
+  Min_benefit  Objective function i.e. to minimize the resources required for ir
+               rigation development($)
+  Hay_DUAL  Reduced Cost ($) associated with using resources for Hay crop
+  Grain_DUAL  Reduced Cost ($) associated with using resources for Grain crop
+
+---- VAR X  Dual variables
+
+          LOWER     LEVEL     UPPER    MARGINAL
+
+June        .         .        +INF   2000.000      
+July        .       20.000     +INF       .         
+August      .         .        +INF   4000.000      
+Land        .       80.000     +INF       .         
+
+                       LOWER     LEVEL     UPPER    MARGINAL
+
+---- VAR Min_Z          -INF  1.1600E+6     +INF       .         
+
+  Min_Z  Total benefit from the Irrigation development i.e. objective function v
+         alue ($)
+
+
+**** REPORT SUMMARY :        0     NONOPT
+                             0 INFEASIBLE
+                             0  UNBOUNDED
+
+
+EXECUTION TIME       =        0.297 SECONDS      4 MB  32.2.0 rc62c018 WEX-WEI
+
+
+USER: Small MUD - 5 User License                     G200622/0001AP-GEN
+      Utah State University, Utah Water Research Laboratory      DC7087
+      License for teaching and research at degree granting institutions
+
+
+**** FILE SUMMARY
+
+Input      E:\Systems analysis class\Gams\Ex2-3_Dual.gms
+Output     E:\Systems analysis class\Gams\Ex2-3_Dual.lst
