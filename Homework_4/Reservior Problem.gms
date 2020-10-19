@@ -82,10 +82,9 @@ Initial_Reservior(T)$(ord(T) eq 1)..         X("Reservior",T) =e= Initial_storag
 
 *  Primary model
 MODEL Benefit /Max_benefit,Reservior_capacity,PointA_Constraint,EndStorage_Constraint,Turbine_capacity,Massbalance_pointB,Reservior_Massbalance,Initial_Reservior/;
+Benefit.optfile = 1;
 
-
-
-
+****************************************************************************
 ********************************************************************************
 * Model with increased instream flow requirement
 
@@ -102,9 +101,7 @@ NewPointA_Constraint(T)..           X("Flow_at_A",T)=g= AddWater_PointA ;
 MODEL PointA /Max_benefit,Reservior_capacity,NewPointA_Constraint,EndStorage_Constraint,Turbine_capacity,Massbalance_pointB,Reservior_Massbalance,Initial_Reservior/;
 
 
-
-
-********************************************************************************
+*******************************************************************************
 *Model with one more unit of water for months 1, 2, and 3.
 parameter
 
@@ -164,10 +161,6 @@ SOLVE ChangeBasis USING LP MAXIMIZING Max_Z;
 
 
 *******************************************************************************
-
-
-
-
 
 *Solve statements for defined models
 SOLVE Benefit USING LP MAXIMIZING Max_Z;

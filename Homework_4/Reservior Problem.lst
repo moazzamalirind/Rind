@@ -1,4 +1,4 @@
-GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/24/20 12:45:52 Page 1
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 10/19/20 01:37:51 Page 1
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
 C o m p i l a t i o n
 
@@ -6,227 +6,247 @@ C o m p i l a t i o n
        
       CEE 6410 - Water Resources Systems Analysis
       Reservior Problem
+      A reservoir is designed to provide hydropower and water for irrigation.  T
+      he turbine releases may also be used for irrigation.
+      At least one unit of water must be kept in the river each month at point A
+      .  The hydropower turbines have a capacity of 4 units
+      of water per month (flows are constant during any single month), and any o
+      ther releases must bypass the tur-bines.
+      The size of farmed area is very large relative to the amount of irrigation
+       water available, so there is no upper limit on usable irrigation water.
+      The reservoir has a capacity of 9 units, and initial storage is 5 units of
+       water.  The ending storage must be equal to or greater than the beginning
+       storage.
+      The benefits per unit of water, and the estimated average inflows to the r
+      eservoir are given in Table 1.
+       
+      *******
+      Table 1
+      ********
+      Month    Inflow Units        Hydropower Benefits ($/unit)        Irrigatio
+      n Benefits ($/unit)
+      1            2                     1.6                                 1.0
+      2            2                     1.7                                 1.2
+      3            3                     1.8                                 1.9
+      4            4                     1.9                                 2.0
+      5            3                     2.0                                 2.2
+      6            2                     2.0                                 2.2
+       
+       
        
        
       Moazzam Rind
       moazzamalirind@gmail.com
-      September 18, 2015
-  11   
-  12  Sets
-  13   
-  14  Loc                     Location /Reservior "Reservior",Spill "Spill",Turb
-      ine "Hydropower",Flow_at_A "Flow at Point A" ,Irrigation "Irrigation"/
-  15  T                       Time in months /M1*M6/
-  16  ;
-  17   
-  18  Parameters
-  19  *Given data
-  20  Inflow(T)                Inflow volume (Inflow units) during time T /M1 2,
-      M2 2,M3 3,M4 4,M5 3,M6 2/
-  21  hb(T)                    Hydropower Benefits ($ per unit)/M1 1.6,M2 1.7,M3
-       1.8,M4 1.9,M5 2,M6 2/
-  22  ib(T)                    Irrigation Benefits ($ per unit)/M1 1,M2 1.2,M3 1
-      .9,M4 2,M5 2.2,M6 2.2/
-  23   
-  24  ;
-  25   
-  26  Positive variables
-  27  X(Loc,T)                Water volume at location Loc at time T  (volume un
-      its);
-  28  *                       For reservior loaction it's storage volume and at 
-      other locations it's flow (volume/time)
-  29   
-  30  Variable
-  31  Max_Z                   Objective Function value
+      September 24, 2020
+  30   
+  31  Sets
   32   
-  33   
-  34  Scalars
-  35  Initial_storage          Water avialable in reservior at start (volume)/5/
-  36  capacity_Reservior       Storage capacity of the Reservior (volume) /9/
-  37  ReqWater_PointA          Minimum water required at point A (volume per tim
-      e) /1/
-  38  MaxTurbine_capacity      Maximum capacity of the turbine (volume per time)
-      /4/
-  39  ;
-  40   
-  41  Equations
+  33  Loc                     Location /Reservior "Reservior",Spill "Spill",Turb
+      ine "Hydropower",Flow_at_A "Flow at Point A" ,Irrigation "Irrigation"/
+  34  T                       Time in months /M1*M6/
+  35  ;
+  36   
+  37  Parameters
+  38  *Given data
+  39  Inflow(T)                Inflow volume (Inflow units) during time T /M1 2,
+      M2 2,M3 3,M4 4,M5 3,M6 2/
+  40  hb(T)                    Hydropower Benefits ($ per unit)/M1 1.6,M2 1.7,M3
+       1.8,M4 1.9,M5 2,M6 2/
+  41  ib(T)                    Irrigation Benefits ($ per unit)/M1 1,M2 1.2,M3 1
+      .9,M4 2,M5 2.2,M6 2.2/
   42   
-  43  Max_benefit                 Objective function i.e. to maximize the benefi
-      t ($)
-  44  Reservior_capacity(T)       Reservior capacity constraint (volume)
-  45  PointA_Constraint(T)        Minimum flow constraint at point A (volume per
-       time)
-  46  EndStorage_Constraint       Ending storage in reservior constraint (volume
-      )
-  47  Turbine_capacity(T)         Maximum volume turbine can pass per time T (Vo
-      lume per time)
-  48  Massbalance_pointB(T)       Max balance at point B at any time T
-  49  Reservior_Massbalance(T)    Reservior Mass balance (Volume)
-  50  Initial_Reservior(T)        Reservior Mass balance at first timestep (Volu
-      me)
-  51  ;
+  43  ;
+  44   
+  45  Positive variables
+  46  X(Loc,T)                Water volume at location Loc at time T  (volume un
+      its);
+  47  *                       For reservior loaction it's storage volume and at 
+      other locations it's flow (volume/time)
+  48   
+  49  Variable
+  50  Max_Z                   Objective Function value
+  51   
   52   
-  53  *Objective function (i.e Maximize Benefits) and all constraints.
-  54  Max_benefit..                    Max_Z =e= sum (T,hb(T)* X("Turbine",T)+ i
+  53  Scalars
+  54  Initial_storage          Water avialable in reservior at start (volume)/5/
+  55  capacity_Reservior       Storage capacity of the Reservior (volume) /9/
+  56  ReqWater_PointA          Minimum water required at point A (volume per tim
+      e) /1/
+  57  MaxTurbine_capacity      Maximum capacity of the turbine (volume per time)
+      /4/
+  58  ;
+  59   
+  60  Equations
+  61   
+  62  Max_benefit                 Objective function i.e. to maximize the benefi
+      t ($)
+  63  Reservior_capacity(T)       Reservior capacity constraint (volume)
+  64  PointA_Constraint(T)        Minimum flow constraint at point A (volume per
+       time)
+  65  EndStorage_Constraint       Ending storage in reservior constraint (volume
+      )
+  66  Turbine_capacity(T)         Maximum volume turbine can pass per time T (Vo
+      lume per time)
+  67  Massbalance_pointB(T)       Max balance at point B at any time T
+  68  Reservior_Massbalance(T)    Reservior Mass balance (Volume)
+  69  Initial_Reservior(T)        Reservior Mass balance at first timestep (Volu
+      me)
+  70  ;
+  71   
+  72  *Objective function (i.e Maximize Benefits) and all constraints.
+  73  Max_benefit..                    Max_Z =e= sum (T,hb(T)* X("Turbine",T)+ i
       b(T)* X("Irrigation",T));
-  55  Reservior_capacity(T)..          X("Reservior",T)=l= capacity_Reservior;
-  56  PointA_Constraint(T)..           X("Flow_at_A",T)=g= ReqWater_PointA ;
-  57  EndStorage_Constraint..          X("Reservior","M6") =g= Initial_storage;
-  58  Turbine_capacity(T)..            X("Turbine",T)=l= MaxTurbine_capacity;
-  59  Massbalance_pointB(T)..          X("Turbine",T)+  X("Spill",T) =e=  X("Irr
+  74  Reservior_capacity(T)..          X("Reservior",T)=l= capacity_Reservior;
+  75  PointA_Constraint(T)..           X("Flow_at_A",T)=g= ReqWater_PointA ;
+  76  EndStorage_Constraint..          X("Reservior","M6") =g= Initial_storage;
+  77  Turbine_capacity(T)..            X("Turbine",T)=l= MaxTurbine_capacity;
+  78  Massbalance_pointB(T)..          X("Turbine",T)+  X("Spill",T) =e=  X("Irr
       igation",T)+X("Flow_at_A",T);
-  60  Reservior_Massbalance(T)$(ord(T) gt 1)..     X("Reservior",T) =e= X("Reser
+  79  Reservior_Massbalance(T)$(ord(T) gt 1)..     X("Reservior",T) =e= X("Reser
       vior",T-1)+Inflow(T)-X("Spill",T)- X("Turbine",T);
-  61  Initial_Reservior(T)$(ord(T) eq 1)..         X("Reservior",T) =e= Initial_
+  80  Initial_Reservior(T)$(ord(T) eq 1)..         X("Reservior",T) =e= Initial_
       storage + Inflow(T) -X("Spill",T)- X("Turbine",T);
-  62   
-  63   
-  64  *  Primary model
-  65  MODEL Benefit /Max_benefit,Reservior_capacity,PointA_Constraint,EndStorage
+  81   
+  82   
+  83  *  Primary model
+  84  MODEL Benefit /Max_benefit,Reservior_capacity,PointA_Constraint,EndStorage
       _Constraint,Turbine_capacity,Massbalance_pointB,Reservior_Massbalance,Init
       ial_Reservior/;
-  66   
-  67  **************************************************************************
+  85  Benefit.optfile = 1;
+  86   
+  87  **************************************************************************
+      **
+  88  **************************************************************************
       ******
-  68  * Model with increased instream flow requirement
-  69   
-  70  parameter
-  71   
-  72  AddWater_PointA          Minimum water required at point A (volume per tim
+  89  * Model with increased instream flow requirement
+  90   
+  91  parameter
+  92   
+  93  AddWater_PointA          Minimum water required at point A (volume per tim
       e)/2/;
-  73  * Increased instream flow requiment from one to two
-  74   
-  75  Equations
-  76  NewPointA_Constraint(T)        Minimum flow constraint at point A (volume 
+  94  * Increased instream flow requiment from one to two
+  95   
+  96  Equations
+  97  NewPointA_Constraint(T)        Minimum flow constraint at point A (volume 
       per time);
-  77  NewPointA_Constraint(T)..           X("Flow_at_A",T)=g= AddWater_PointA ;
-  78   
-  79  * Define model having increased instream flow requirement
-  80  MODEL PointA /Max_benefit,Reservior_capacity,NewPointA_Constraint,EndStora
+  98  NewPointA_Constraint(T)..           X("Flow_at_A",T)=g= AddWater_PointA ;
+  99   
+ 100  * Define model having increased instream flow requirement
+ 101  MODEL PointA /Max_benefit,Reservior_capacity,NewPointA_Constraint,EndStora
       ge_Constraint,Turbine_capacity,Massbalance_pointB,Reservior_Massbalance,In
       itial_Reservior/;
-  81   
-  82  **************************************************************************
-      ******
-  83  *Model with one more unit of water for months 1, 2, and 3.
-  84  parameter
-  85   
-  86  New_Inflow(T)                Inflow volume (Inflow units) during time T /M
+ 102   
+ 103   
+ 104  **************************************************************************
+      *****
+ 105  *Model with one more unit of water for months 1, 2, and 3.
+ 106  parameter
+ 107   
+ 108  New_Inflow(T)                Inflow volume (Inflow units) during time T /M
       1 3,M2 3,M3 4,M4 4,M5 3,M6 2/;
-  87  * one  additional unit inflow during first three months.
-  88   
-  89  Equations
-  90  NewReservior_Massbalance(T)        Reservior Mass balance (Volume)
-  91  NewInitial_Reservior(T)            Reservior Mass balance at first timeste
+ 109  * one  additional unit inflow during first three months.
+ 110   
+ 111  Equations
+ 112  NewReservior_Massbalance(T)        Reservior Mass balance (Volume)
+ 113  NewInitial_Reservior(T)            Reservior Mass balance at first timeste
       p (Volume);
-  92   
-  93  NewReservior_Massbalance(T)$(ord(T) gt 1)..     X("Reservior",T) =e= X("Re
+ 114   
+ 115  NewReservior_Massbalance(T)$(ord(T) gt 1)..     X("Reservior",T) =e= X("Re
       servior",T-1)+New_Inflow(T)-X("Spill",T)- X("Turbine",T);
-  94  NewInitial_Reservior(T)$(ord(T) eq 1)..         X("Reservior",T) =e= Initi
+ 116  NewInitial_Reservior(T)$(ord(T) eq 1)..         X("Reservior",T) =e= Initi
       al_storage + New_Inflow(T) -X("Spill",T)- X("Turbine",T);;
-  95   
-  96  * Define model for increased inflow condition
-  97  MODEL AddedInflows /Max_benefit,Reservior_capacity,PointA_Constraint,EndSt
+ 117   
+ 118  * Define model for increased inflow condition
+ 119  MODEL AddedInflows /Max_benefit,Reservior_capacity,PointA_Constraint,EndSt
       orage_Constraint,Turbine_capacity,Massbalance_pointB,NewReservior_Massbala
       nce,NewInitial_Reservior/;
-  98   
-  99  **************************************************************************
-      *****
- 100   
- 101   
- 102  *$ontext
- 103  **************************************************************************
-      ******
- 104  *Model to find that at which instream flow requirement the solution change
-       its basis
- 105   
- 106  Set
- 107  RUN                             Runs /r1*r5/;
- 108  *To make model run 5 times with different  inflow requirement values
- 109   
- 110  parameters
- 111  Water_PointA(RUN)         Minimum water required at point A (volume per ti
-      me)/r1 1,r2 2,r3 3,r4 4,r5 5/
- 112  * Increased instream flow requiment
- 113  Obj_Value(RUN)                  Save objective function value under differ
-      ent runs
- 114  Turbine_variable(RUN,T)         save decision variable (flow through turbi
-      ne) under different runs
- 115  Irrigation_variable(RUN,T)      save decision variable (Flow to irrigation
-      ) under different runs
- 116  FlowRate_A                       Flow rate at point A (volume per time);
- 117   
- 118  Equation
- 119  FlowA(T)                         flow rate at point A (volume per time);
  120   
- 121  FlowA(T)..                       X("Flow_at_A",T)=g= FlowRate_A;
+ 121  **************************************************************************
+      *****
  122   
  123   
- 124  * Define model having increased instream flow requirement
- 125  MODEL ChangeBasis /Max_benefit,Reservior_capacity,FlowA,EndStorage_Constra
+ 124   
+ 125  **************************************************************************
+      ******
+ 126  *Model to find that at which instream flow requirement the solution change
+       its basis
+ 127   
+ 128  Set
+ 129  RUN                             Runs /r1*r5/;
+ 130  *To make model run 5 times with different  inflow requirement values
+ 131   
+ 132  parameters
+ 133  Water_PointA(RUN)         Minimum water required at point A (volume per ti
+      me)/r1 1,r2 2,r3 3,r4 4,r5 5/
+ 134  * Increased instream flow requiment
+ 135  Obj_Value(RUN)                  Save objective function value under differ
+      ent runs
+ 136  Turbine_variable(RUN,T)         save decision variable (flow through turbi
+      ne) under different runs
+ 137  Irrigation_variable(RUN,T)      save decision variable (Flow to irrigation
+      ) under different runs
+ 138  FlowRate_A                       Flow rate at point A (volume per time);
+ 139   
+ 140  Equation
+ 141  FlowA(T)                         flow rate at point A (volume per time);
+ 142   
+ 143  FlowA(T)..                       X("Flow_at_A",T)=g= FlowRate_A;
+ 144   
+ 145   
+ 146  * Define model having increased instream flow requirement
+ 147  MODEL ChangeBasis /Max_benefit,Reservior_capacity,FlowA,EndStorage_Constra
       int,Turbine_capacity,Massbalance_pointB,Reservior_Massbalance,Initial_Rese
       rvior/;
- 126   
- 127  loop(RUN,
- 128     FlowRate_A= Water_PointA(RUN);
- 129   
- 130  *    Initialize decision variable values to zero
- 131      X.L("Turbine",T) = 0;
- 132      X.L("Irrigation",T)=0;
- 133   
- 134  SOLVE ChangeBasis USING LP MAXIMIZING Max_Z;
- 135      Obj_Value(RUN)= Max_Z.L;
- 136      Turbine_variable(RUN,T)= X.L("Turbine",T);
- 137      Irrigation_variable(RUN,T)= X.L("Irrigation",T);
- 138  );
- 139   
- 140   
- 141  **************************************************************************
-      *****
- 142  *offtext
- 143   
- 144   
- 145  *Benefit.OptFile=1;
- 146  *Option objrng all;
- 147   
- 148  *option rhsrng all;
- 149   
- 150   
+ 148   
+ 149  loop(RUN,
+ 150     FlowRate_A= Water_PointA(RUN);
  151   
- 152   
- 153  *Solve statements for defined models
- 154  SOLVE Benefit USING LP MAXIMIZING Max_Z;
+ 152  *    Initialize decision variable values to zero
+ 153      X.L("Turbine",T) = 0;
+ 154      X.L("Irrigation",T)=0;
  155   
- 156  SOLVE PointA USING LP MAXIMIZING Max_Z;
- 157  SOLVE AddedInflows USING LP MAXIMIZING Max_Z;
- 158   
- 159   
- 160  * Dump all input data and results to a GAMS gdx file
- 161  Execute_Unload "Reservior.gdx";
- 162  * Dump the gdx file to an Excel workbook
- 163  Execute "gdx2xls Reservior.gdx"
+ 156  SOLVE ChangeBasis USING LP MAXIMIZING Max_Z;
+ 157      Obj_Value(RUN)= Max_Z.L;
+ 158      Turbine_variable(RUN,T)= X.L("Turbine",T);
+ 159      Irrigation_variable(RUN,T)= X.L("Irrigation",T);
+ 160  );
+ 161   
+ 162   
+ 163  **************************************************************************
+      *****
  164   
- 165   
- 166   
- 167   
- 168   
+ 165  *Solve statements for defined models
+ 166  SOLVE Benefit USING LP MAXIMIZING Max_Z;
+ 167  SOLVE PointA USING LP MAXIMIZING Max_Z;
+ 168  SOLVE AddedInflows USING LP MAXIMIZING Max_Z;
  169   
  170   
- 171   
- 172   
- 173   
- 174   
+ 171  * Dump all input data and results to a GAMS gdx file
+ 172  Execute_Unload "Reservior.gdx";
+ 173  * Dump the gdx file to an Excel workbook
+ 174  Execute "gdx2xls Reservior.gdx"
  175   
  176   
  177   
  178   
  179   
+ 180   
+ 181   
+ 182   
+ 183   
+ 184   
+ 185   
+ 186   
+ 187   
+ 188   
+ 189   
+ 190   
 
 
 COMPILATION TIME     =        0.000 SECONDS      3 MB  32.2.0 rc62c018 WEX-WEI
-GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/24/20 12:45:52 Page 2
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 10/19/20 01:37:51 Page 2
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
-Equation Listing    SOLVE ChangeBasis Using LP From line 134
+Equation Listing    SOLVE ChangeBasis Using LP From line 156
 
 
 ---- Max_benefit  =E=  Objective function i.e. to maximize the benefit ($)
@@ -319,9 +339,9 @@ Initial_Reservior(M1)..  X(Reservior,M1) + X(Spill,M1) + X(Turbine,M1) =E= 7 ;
      
       (LHS = 0, INFES = 7 ****)
      
-GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/24/20 12:45:52 Page 3
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 10/19/20 01:37:51 Page 3
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
-Column Listing      SOLVE ChangeBasis Using LP From line 134
+Column Listing      SOLVE ChangeBasis Using LP From line 156
 
 
 ---- X  Water volume at location Loc at time T  (volume units)
@@ -352,9 +372,9 @@ Max_Z
                 (.LO, .L, .UP, .M = -INF, 0, +INF, 0)
         1       Max_benefit
 
-GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/24/20 12:45:52 Page 4
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 10/19/20 01:37:51 Page 4
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
-Model Statistics    SOLVE ChangeBasis Using LP From line 134
+Model Statistics    SOLVE ChangeBasis Using LP From line 156
 
 
 LOOPS                                  RUN   r1
@@ -367,19 +387,19 @@ BLOCKS OF VARIABLES           2     SINGLE VARIABLES           31
 NON ZERO ELEMENTS            79
 
 
-GENERATION TIME      =        0.016 SECONDS      4 MB  32.2.0 rc62c018 WEX-WEI
+GENERATION TIME      =        0.078 SECONDS      4 MB  32.2.0 rc62c018 WEX-WEI
                L O O P S                RUN r1
 
-GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/24/20 12:45:52 Page 5
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 10/19/20 01:37:51 Page 5
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
-Solution Report     SOLVE ChangeBasis Using LP From line 134
+Solution Report     SOLVE ChangeBasis Using LP From line 156
 
 
                S O L V E      S U M M A R Y
 
      MODEL   ChangeBasis         OBJECTIVE  Max_Z
      TYPE    LP                  DIRECTION  MAXIMIZE
-     SOLVER  CPLEX               FROM LINE  134
+     SOLVER  CPLEX               FROM LINE  156
 
 **** SOLVER STATUS     1 Normal Completion         
 **** MODEL STATUS      1 Optimal                   
@@ -518,9 +538,9 @@ Irrigation.M6      .        3.000     +INF       .
 **** REPORT SUMMARY :        0     NONOPT
                              0 INFEASIBLE
                              0  UNBOUNDED
-GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/24/20 12:45:52 Page 6
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 10/19/20 01:37:51 Page 6
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
-Equation Listing    SOLVE ChangeBasis Using LP From line 134
+Equation Listing    SOLVE ChangeBasis Using LP From line 156
 
 
 ---- Max_benefit  =E=  Objective function i.e. to maximize the benefit ($)
@@ -615,9 +635,9 @@ Initial_Reservior(M1)..  X(Reservior,M1) + X(Spill,M1) + X(Turbine,M1) =E= 7 ;
      
       (LHS = 6, INFES = 1 ****)
      
-GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/24/20 12:45:52 Page 7
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 10/19/20 01:37:51 Page 7
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
-Column Listing      SOLVE ChangeBasis Using LP From line 134
+Column Listing      SOLVE ChangeBasis Using LP From line 156
 
 
 ---- X  Water volume at location Loc at time T  (volume units)
@@ -648,9 +668,9 @@ Max_Z
                 (.LO, .L, .UP, .M = -INF, 51.6, +INF, 0)
         1       Max_benefit
 
-GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/24/20 12:45:52 Page 8
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 10/19/20 01:37:51 Page 8
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
-Model Statistics    SOLVE ChangeBasis Using LP From line 134
+Model Statistics    SOLVE ChangeBasis Using LP From line 156
 
 
 LOOPS                                  RUN   r2
@@ -666,16 +686,16 @@ NON ZERO ELEMENTS            79
 GENERATION TIME      =        0.016 SECONDS      4 MB  32.2.0 rc62c018 WEX-WEI
                L O O P S                RUN r2
 
-GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/24/20 12:45:52 Page 9
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 10/19/20 01:37:51 Page 9
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
-Solution Report     SOLVE ChangeBasis Using LP From line 134
+Solution Report     SOLVE ChangeBasis Using LP From line 156
 
 
                S O L V E      S U M M A R Y
 
      MODEL   ChangeBasis         OBJECTIVE  Max_Z
      TYPE    LP                  DIRECTION  MAXIMIZE
-     SOLVER  CPLEX               FROM LINE  134
+     SOLVER  CPLEX               FROM LINE  156
 
 **** SOLVER STATUS     1 Normal Completion         
 **** MODEL STATUS      1 Optimal                   
@@ -814,9 +834,9 @@ Irrigation.M6      .        2.000     +INF       .
 **** REPORT SUMMARY :        0     NONOPT
                              0 INFEASIBLE
                              0  UNBOUNDED
-GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/24/20 12:45:52 Page 10
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 10/19/20 01:37:51 Page 10
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
-Equation Listing    SOLVE ChangeBasis Using LP From line 134
+Equation Listing    SOLVE ChangeBasis Using LP From line 156
 
 
 ---- Max_benefit  =E=  Objective function i.e. to maximize the benefit ($)
@@ -911,9 +931,9 @@ Initial_Reservior(M1)..  X(Reservior,M1) + X(Spill,M1) + X(Turbine,M1) =E= 7 ;
      
       (LHS = 5, INFES = 2 ****)
      
-GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/24/20 12:45:52 Page 11
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 10/19/20 01:37:51 Page 11
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
-Column Listing      SOLVE ChangeBasis Using LP From line 134
+Column Listing      SOLVE ChangeBasis Using LP From line 156
 
 
 ---- X  Water volume at location Loc at time T  (volume units)
@@ -944,9 +964,9 @@ Max_Z
                 (.LO, .L, .UP, .M = -INF, 38.8, +INF, 0)
         1       Max_benefit
 
-GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/24/20 12:45:52 Page 12
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 10/19/20 01:37:51 Page 12
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
-Model Statistics    SOLVE ChangeBasis Using LP From line 134
+Model Statistics    SOLVE ChangeBasis Using LP From line 156
 
 
 LOOPS                                  RUN   r3
@@ -959,25 +979,25 @@ BLOCKS OF VARIABLES           2     SINGLE VARIABLES           31
 NON ZERO ELEMENTS            79
 
 
-GENERATION TIME      =        0.032 SECONDS      4 MB  32.2.0 rc62c018 WEX-WEI
+GENERATION TIME      =        0.015 SECONDS      4 MB  32.2.0 rc62c018 WEX-WEI
                L O O P S                RUN r3
 
-GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/24/20 12:45:52 Page 13
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 10/19/20 01:37:51 Page 13
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
-Solution Report     SOLVE ChangeBasis Using LP From line 134
+Solution Report     SOLVE ChangeBasis Using LP From line 156
 
 
                S O L V E      S U M M A R Y
 
      MODEL   ChangeBasis         OBJECTIVE  Max_Z
      TYPE    LP                  DIRECTION  MAXIMIZE
-     SOLVER  CPLEX               FROM LINE  134
+     SOLVER  CPLEX               FROM LINE  156
 
 **** SOLVER STATUS     1 Normal Completion         
 **** MODEL STATUS      4 Infeasible                
 **** OBJECTIVE VALUE               24.6000
 
- RESOURCE USAGE, LIMIT          0.000 10000000000.000
+ RESOURCE USAGE, LIMIT          0.016 10000000000.000
  ITERATION COUNT, LIMIT        25    2147483647
 
 IBM ILOG CPLEX   32.2.0 rc62c018 Released Aug 26, 2020 WEI x86 64bit/MS Window
@@ -1111,9 +1131,9 @@ Irrigation.M6      .       -2.000     +INF       .    INFES
                     MAX      2.000
                     MEAN     2.000
                              0  UNBOUNDED
-GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/24/20 12:45:52 Page 14
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 10/19/20 01:37:51 Page 14
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
-Equation Listing    SOLVE ChangeBasis Using LP From line 134
+Equation Listing    SOLVE ChangeBasis Using LP From line 156
 
 
 ---- Max_benefit  =E=  Objective function i.e. to maximize the benefit ($)
@@ -1208,9 +1228,9 @@ Initial_Reservior(M1)..  X(Reservior,M1) + X(Spill,M1) + X(Turbine,M1) =E= 7 ;
      
       (LHS = 4, INFES = 3 ****)
      
-GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/24/20 12:45:52 Page 15
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 10/19/20 01:37:51 Page 15
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
-Column Listing      SOLVE ChangeBasis Using LP From line 134
+Column Listing      SOLVE ChangeBasis Using LP From line 156
 
 
 ---- X  Water volume at location Loc at time T  (volume units)
@@ -1241,9 +1261,9 @@ Max_Z
                 (.LO, .L, .UP, .M = -INF, 24.6, +INF, 0)
         1       Max_benefit
 
-GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/24/20 12:45:52 Page 16
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 10/19/20 01:37:51 Page 16
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
-Model Statistics    SOLVE ChangeBasis Using LP From line 134
+Model Statistics    SOLVE ChangeBasis Using LP From line 156
 
 
 LOOPS                                  RUN   r4
@@ -1256,25 +1276,25 @@ BLOCKS OF VARIABLES           2     SINGLE VARIABLES           31
 NON ZERO ELEMENTS            79
 
 
-GENERATION TIME      =        0.016 SECONDS      4 MB  32.2.0 rc62c018 WEX-WEI
+GENERATION TIME      =        0.015 SECONDS      4 MB  32.2.0 rc62c018 WEX-WEI
                L O O P S                RUN r4
 
-GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/24/20 12:45:52 Page 17
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 10/19/20 01:37:51 Page 17
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
-Solution Report     SOLVE ChangeBasis Using LP From line 134
+Solution Report     SOLVE ChangeBasis Using LP From line 156
 
 
                S O L V E      S U M M A R Y
 
      MODEL   ChangeBasis         OBJECTIVE  Max_Z
      TYPE    LP                  DIRECTION  MAXIMIZE
-     SOLVER  CPLEX               FROM LINE  134
+     SOLVER  CPLEX               FROM LINE  156
 
 **** SOLVER STATUS     1 Normal Completion         
 **** MODEL STATUS      4 Infeasible                
 **** OBJECTIVE VALUE               13.0000
 
- RESOURCE USAGE, LIMIT          0.093 10000000000.000
+ RESOURCE USAGE, LIMIT          0.109 10000000000.000
  ITERATION COUNT, LIMIT         0    2147483647
 
 IBM ILOG CPLEX   32.2.0 rc62c018 Released Aug 26, 2020 WEI x86 64bit/MS Window
@@ -1411,9 +1431,9 @@ Irrigation.M6      .       -8.000     +INF       .    INFES
                     MAX      8.000
                     MEAN     4.333
                              0  UNBOUNDED
-GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/24/20 12:45:52 Page 18
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 10/19/20 01:37:51 Page 18
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
-Equation Listing    SOLVE ChangeBasis Using LP From line 134
+Equation Listing    SOLVE ChangeBasis Using LP From line 156
 
 
 ---- Max_benefit  =E=  Objective function i.e. to maximize the benefit ($)
@@ -1508,9 +1528,9 @@ Initial_Reservior(M1)..  X(Reservior,M1) + X(Spill,M1) + X(Turbine,M1) =E= 7 ;
      
       (LHS = 3, INFES = 4 ****)
      
-GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/24/20 12:45:52 Page 19
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 10/19/20 01:37:51 Page 19
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
-Column Listing      SOLVE ChangeBasis Using LP From line 134
+Column Listing      SOLVE ChangeBasis Using LP From line 156
 
 
 ---- X  Water volume at location Loc at time T  (volume units)
@@ -1541,9 +1561,9 @@ Max_Z
                 (.LO, .L, .UP, .M = -INF, 13, +INF, 0)
         1       Max_benefit
 
-GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/24/20 12:45:52 Page 20
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 10/19/20 01:37:51 Page 20
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
-Model Statistics    SOLVE ChangeBasis Using LP From line 134
+Model Statistics    SOLVE ChangeBasis Using LP From line 156
 
 
 LOOPS                                  RUN   r5
@@ -1559,22 +1579,22 @@ NON ZERO ELEMENTS            79
 GENERATION TIME      =        0.016 SECONDS      4 MB  32.2.0 rc62c018 WEX-WEI
                L O O P S                RUN r5
 
-GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/24/20 12:45:52 Page 21
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 10/19/20 01:37:51 Page 21
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
-Solution Report     SOLVE ChangeBasis Using LP From line 134
+Solution Report     SOLVE ChangeBasis Using LP From line 156
 
 
                S O L V E      S U M M A R Y
 
      MODEL   ChangeBasis         OBJECTIVE  Max_Z
      TYPE    LP                  DIRECTION  MAXIMIZE
-     SOLVER  CPLEX               FROM LINE  134
+     SOLVER  CPLEX               FROM LINE  156
 
 **** SOLVER STATUS     1 Normal Completion         
 **** MODEL STATUS      4 Infeasible                
 **** OBJECTIVE VALUE               37.0000
 
- RESOURCE USAGE, LIMIT          0.078 10000000000.000
+ RESOURCE USAGE, LIMIT          0.094 10000000000.000
  ITERATION COUNT, LIMIT         5    2147483647
 
 IBM ILOG CPLEX   32.2.0 rc62c018 Released Aug 26, 2020 WEI x86 64bit/MS Window
@@ -1587,7 +1607,7 @@ LP status(3): infeasible
 Cplex Time: 0.00sec (det. 0.03 ticks)
 Rerunning with presolve turned off and solving with LPMETHOD=1
 LP status(3): infeasible
-Cplex Time: 0.00sec (det. 0.02 ticks)
+Cplex Time: 0.09sec (det. 0.02 ticks)
 Model has been proven infeasible.
 
                        LOWER     LEVEL     UPPER    MARGINAL
@@ -1711,9 +1731,9 @@ Irrigation.M6      .      -14.000     +INF       .    INFES
                     MAX     14.000
                     MEAN     6.167
                              0  UNBOUNDED
-GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/24/20 12:45:52 Page 22
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 10/19/20 01:37:51 Page 22
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
-Equation Listing    SOLVE Benefit Using LP From line 154
+Equation Listing    SOLVE Benefit Using LP From line 166
 
 
 ---- Max_benefit  =E=  Objective function i.e. to maximize the benefit ($)
@@ -1809,9 +1829,9 @@ Initial_Reservior(M1)..  X(Reservior,M1) + X(Spill,M1) + X(Turbine,M1) =E= 7 ;
      
       (LHS = 7)
      
-GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/24/20 12:45:52 Page 23
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 10/19/20 01:37:51 Page 23
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
-Column Listing      SOLVE Benefit Using LP From line 154
+Column Listing      SOLVE Benefit Using LP From line 166
 
 
 ---- X  Water volume at location Loc at time T  (volume units)
@@ -1844,9 +1864,9 @@ Max_Z
                 (.LO, .L, .UP, .M = -INF, 37, +INF, 0)
         1       Max_benefit
 
-GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/24/20 12:45:52 Page 24
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 10/19/20 01:37:51 Page 24
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
-Model Statistics    SOLVE Benefit Using LP From line 154
+Model Statistics    SOLVE Benefit Using LP From line 166
 
 
 MODEL STATISTICS
@@ -1856,36 +1876,113 @@ BLOCKS OF VARIABLES           2     SINGLE VARIABLES           31  6 projected
 NON ZERO ELEMENTS            79
 
 
-GENERATION TIME      =        0.015 SECONDS      4 MB  32.2.0 rc62c018 WEX-WEI
-GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/24/20 12:45:52 Page 25
+GENERATION TIME      =        0.031 SECONDS      4 MB  32.2.0 rc62c018 WEX-WEI
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 10/19/20 01:37:51 Page 25
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
-Solution Report     SOLVE Benefit Using LP From line 154
+Solution Report     SOLVE Benefit Using LP From line 166
 
 
                S O L V E      S U M M A R Y
 
      MODEL   Benefit             OBJECTIVE  Max_Z
      TYPE    LP                  DIRECTION  MAXIMIZE
-     SOLVER  CPLEX               FROM LINE  154
+     SOLVER  CPLEX               FROM LINE  166
 
 **** SOLVER STATUS     1 Normal Completion         
 **** MODEL STATUS      1 Optimal                   
 **** OBJECTIVE VALUE               51.6000
 
- RESOURCE USAGE, LIMIT          0.062 10000000000.000
+ RESOURCE USAGE, LIMIT          0.078 10000000000.000
  ITERATION COUNT, LIMIT        20    2147483647
 
 IBM ILOG CPLEX   32.2.0 rc62c018 Released Aug 26, 2020 WEI x86 64bit/MS Window
 --- GAMS/Cplex Link licensed for continuous and discrete problems.
 Cplex 12.10.0.0
 
+Reading parameter(s) from "E:\Systems analysis class\Gams\cplex.opt"
+>>  objrng all
+>>  rhsrng all
+Finished reading from "E:\Systems analysis class\Gams\cplex.opt"
 Space for names approximately 0.00 Mb
 Use option 'names no' to turn use of names off
 LP status(1): optimal
-Cplex Time: 0.06sec (det. 0.10 ticks)
+Cplex Time: 0.08sec (det. 0.10 ticks)
 Optimal solution found.
 Objective :          51.600000
 
+  
+ 
+EQUATION NAME                                 LOWER      CURRENT        UPPER
+-------------                                 -----      -------        -----
+Max_benefit                                    -INF            0         +INF
+Reservior_capacity(M1)                            6            9         +INF
+Reservior_capacity(M2)                            7            9         +INF
+Reservior_capacity(M3)                            8            9         +INF
+Reservior_capacity(M4)                            8            9         +INF
+Reservior_capacity(M5)                            7            9         +INF
+Reservior_capacity(M6)                            5            9         +INF
+PointA_Constraint(M1)                             0            1            2
+PointA_Constraint(M2)                             0            1            2
+PointA_Constraint(M3)                             0            1            2
+PointA_Constraint(M4)                             0            1            4
+PointA_Constraint(M5)                             0            1            4
+PointA_Constraint(M6)                             0            1            4
+EndStorage_Constraint                             3            5            6
+Turbine_capacity(M1)                              1            4         +INF
+Turbine_capacity(M2)                              1            4         +INF
+Turbine_capacity(M3)                              2            4         +INF
+Turbine_capacity(M4)                              2            4            5
+Turbine_capacity(M5)                              2            4            5
+Turbine_capacity(M6)                              2            4            5
+Massbalance_pointB(M1)                           -1            0            1
+Massbalance_pointB(M2)                           -1            0            1
+Massbalance_pointB(M3)                         -INF            0            1
+Massbalance_pointB(M4)                         -INF            0            3
+Massbalance_pointB(M5)                         -INF            0            3
+Massbalance_pointB(M6)                         -INF            0            3
+Reservior_Massbalance(M2)                         1            2            4
+Reservior_Massbalance(M3)                         2            3            5
+Reservior_Massbalance(M4)                         3            4            6
+Reservior_Massbalance(M5)                         2            3            5
+Reservior_Massbalance(M6)                         1            2            4
+Initial_Reservior(M1)                             6            7            9
+  
+ 
+VARIABLE NAME                                 LOWER      CURRENT        UPPER
+-------------                                 -----      -------        -----
+X(Reservior, M1)                               -1.1           -0         +INF
+X(Reservior, M2)                               -0.8           -0         +INF
+X(Reservior, M3)                               -0.2           -0          1.5
+X(Reservior, M4)                               -0.5           -0          1.5
+X(Reservior, M5)                               -0.5           -0          1.5
+X(Reservior, M6)                               -INF           -0          3.7
+X(Spill, M1)                                   -INF           -0          1.6
+X(Spill, M2)                                   -INF           -0          1.7
+X(Spill, M3)                                   -INF           -0          1.8
+X(Spill, M4)                                   -INF           -0          1.7
+X(Spill, M5)                                   -INF           -0          1.5
+X(Spill, M6)                                   -INF           -0          1.5
+X(Turbine, M1)                                    0          1.6          2.7
+X(Turbine, M2)                            -2.22e-16          1.7          2.5
+X(Turbine, M3)                                    1          1.8            2
+X(Turbine, M4)                                  1.7          1.9         +INF
+X(Turbine, M5)                                  1.5            2         +INF
+X(Turbine, M6)                                  1.5            2         +INF
+X(Flow_at_A, M1)                               -INF           -0          2.1
+X(Flow_at_A, M2)                               -INF           -0            2
+X(Flow_at_A, M3)                               -INF           -0          1.9
+X(Flow_at_A, M4)                               -INF           -0            2
+X(Flow_at_A, M5)                               -INF           -0          2.2
+X(Flow_at_A, M6)                               -INF           -0          2.2
+X(Irrigation, M1)                              -INF            1          2.1
+X(Irrigation, M2)                              -INF          1.2            2
+X(Irrigation, M3)                               1.1          1.9          2.1
+X(Irrigation, M4)                               1.8            2          3.7
+X(Irrigation, M5)                               1.7          2.2          3.7
+X(Irrigation, M6)                               1.7          2.2          3.7
+Max_Z                                          -INF            1         +INF
+ 
+ 
 
                        LOWER     LEVEL     UPPER    MARGINAL
 
@@ -2005,9 +2102,9 @@ Irrigation.M6      .        3.000     +INF       .
 **** REPORT SUMMARY :        0     NONOPT
                              0 INFEASIBLE
                              0  UNBOUNDED
-GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/24/20 12:45:52 Page 26
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 10/19/20 01:37:51 Page 26
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
-Equation Listing    SOLVE PointA Using LP From line 156
+Equation Listing    SOLVE PointA Using LP From line 167
 
 
 ---- Max_benefit  =E=  Objective function i.e. to maximize the benefit ($)
@@ -2101,9 +2198,9 @@ Initial_Reservior(M1)..  X(Reservior,M1) + X(Spill,M1) + X(Turbine,M1) =E= 7 ;
      
       (LHS = 7)
      
-GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/24/20 12:45:52 Page 27
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 10/19/20 01:37:51 Page 27
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
-Column Listing      SOLVE PointA Using LP From line 156
+Column Listing      SOLVE PointA Using LP From line 167
 
 
 ---- X  Water volume at location Loc at time T  (volume units)
@@ -2134,9 +2231,9 @@ Max_Z
                 (.LO, .L, .UP, .M = -INF, 51.6, +INF, 0)
         1       Max_benefit
 
-GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/24/20 12:45:52 Page 28
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 10/19/20 01:37:51 Page 28
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
-Model Statistics    SOLVE PointA Using LP From line 156
+Model Statistics    SOLVE PointA Using LP From line 167
 
 
 MODEL STATISTICS
@@ -2146,17 +2243,17 @@ BLOCKS OF VARIABLES           2     SINGLE VARIABLES           31
 NON ZERO ELEMENTS            79
 
 
-GENERATION TIME      =        0.015 SECONDS      4 MB  32.2.0 rc62c018 WEX-WEI
-GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/24/20 12:45:52 Page 29
+GENERATION TIME      =        0.031 SECONDS      4 MB  32.2.0 rc62c018 WEX-WEI
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 10/19/20 01:37:51 Page 29
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
-Solution Report     SOLVE PointA Using LP From line 156
+Solution Report     SOLVE PointA Using LP From line 167
 
 
                S O L V E      S U M M A R Y
 
      MODEL   PointA              OBJECTIVE  Max_Z
      TYPE    LP                  DIRECTION  MAXIMIZE
-     SOLVER  CPLEX               FROM LINE  156
+     SOLVER  CPLEX               FROM LINE  167
 
 **** SOLVER STATUS     1 Normal Completion         
 **** MODEL STATUS      1 Optimal                   
@@ -2296,9 +2393,9 @@ Irrigation.M6      .        2.000     +INF       .
 **** REPORT SUMMARY :        0     NONOPT
                              0 INFEASIBLE
                              0  UNBOUNDED
-GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/24/20 12:45:52 Page 30
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 10/19/20 01:37:51 Page 30
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
-Equation Listing    SOLVE AddedInflows Using LP From line 157
+Equation Listing    SOLVE AddedInflows Using LP From line 168
 
 
 ---- Max_benefit  =E=  Objective function i.e. to maximize the benefit ($)
@@ -2392,9 +2489,9 @@ REMAINING 2 ENTRIES SKIPPED
 NewInitial_Reservior(M1)..  X(Reservior,M1) + X(Spill,M1) + X(Turbine,M1) =E= 8
       ; (LHS = 7, INFES = 1 ****)
      
-GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/24/20 12:45:52 Page 31
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 10/19/20 01:37:51 Page 31
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
-Column Listing      SOLVE AddedInflows Using LP From line 157
+Column Listing      SOLVE AddedInflows Using LP From line 168
 
 
 ---- X  Water volume at location Loc at time T  (volume units)
@@ -2425,9 +2522,9 @@ Max_Z
                 (.LO, .L, .UP, .M = -INF, 38.8, +INF, 0)
         1       Max_benefit
 
-GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/24/20 12:45:52 Page 32
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 10/19/20 01:37:51 Page 32
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
-Model Statistics    SOLVE AddedInflows Using LP From line 157
+Model Statistics    SOLVE AddedInflows Using LP From line 168
 
 
 MODEL STATISTICS
@@ -2437,23 +2534,23 @@ BLOCKS OF VARIABLES           2     SINGLE VARIABLES           31
 NON ZERO ELEMENTS            79
 
 
-GENERATION TIME      =        0.016 SECONDS      4 MB  32.2.0 rc62c018 WEX-WEI
-GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/24/20 12:45:52 Page 33
+GENERATION TIME      =        0.015 SECONDS      4 MB  32.2.0 rc62c018 WEX-WEI
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 10/19/20 01:37:51 Page 33
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
-Solution Report     SOLVE AddedInflows Using LP From line 157
+Solution Report     SOLVE AddedInflows Using LP From line 168
 
 
                S O L V E      S U M M A R Y
 
      MODEL   AddedInflows        OBJECTIVE  Max_Z
      TYPE    LP                  DIRECTION  MAXIMIZE
-     SOLVER  CPLEX               FROM LINE  157
+     SOLVER  CPLEX               FROM LINE  168
 
 **** SOLVER STATUS     1 Normal Completion         
 **** MODEL STATUS      1 Optimal                   
 **** OBJECTIVE VALUE               61.9000
 
- RESOURCE USAGE, LIMIT          0.016 10000000000.000
+ RESOURCE USAGE, LIMIT          0.078 10000000000.000
  ITERATION COUNT, LIMIT        21    2147483647
 
 IBM ILOG CPLEX   32.2.0 rc62c018 Released Aug 26, 2020 WEI x86 64bit/MS Window
@@ -2586,12 +2683,12 @@ Irrigation.M6      .        3.000     +INF       .
 **** REPORT SUMMARY :        0     NONOPT
                              0 INFEASIBLE
                              0  UNBOUNDED
-GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 09/24/20 12:45:52 Page 34
+GAMS 32.2.0  rc62c018 Released Aug 26, 2020 WEX-WEI x86 64bit/MS Windows - 10/19/20 01:37:51 Page 34
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
 E x e c u t i o n
 
 
-EXECUTION TIME       =        2.547 SECONDS      4 MB  32.2.0 rc62c018 WEX-WEI
+EXECUTION TIME       =        3.563 SECONDS      4 MB  32.2.0 rc62c018 WEX-WEI
 
 
 USER: Small MUD - 5 User License                     G200622/0001AP-GEN
