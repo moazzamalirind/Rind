@@ -26,7 +26,7 @@ Recommended Citation
 ______________________________________________________________________________
 
 Moazzam Rind and Mahmudur Aveek (2020). "Re-operate Lake Powell and Lake Mead for ecosystem and water supply benefits". Utah State University, Logan, Utah.
-https://github.com/moazzamalirind/Rind/tree/master/Class%20project
+https://github.com/moazzamalirind/Rind/tree/master
 
 ______________________________________________________________________________
 Steps to run the Model and reproduce results
